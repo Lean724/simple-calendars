@@ -101,23 +101,15 @@ export interface MonthCardConfig extends BaseCalendarCardConfig {
 }
 
 export interface WeekCardConfig extends BaseCalendarCardConfig {
-  layout?: 'compact' | 'grid';
   show_week_number?: boolean;
   show_progress_bar?: boolean;
   show_empty_days?: boolean;
-  start_hour?: number;
-  end_hour?: number;
   days_to_show?: number;
-  compact_all_day?: boolean;
 }
 
 export interface DayCardConfig extends BaseCalendarCardConfig {
-  layout?: 'compact' | 'grid';
   show_week_number?: boolean;
   show_progress_bar?: boolean;
-  start_hour?: number;
-  end_hour?: number;
-  show_agenda_summary?: boolean;
 }
 
 export type AnyCalendarCardConfig = MonthCardConfig | WeekCardConfig | DayCardConfig;

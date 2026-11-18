@@ -228,9 +228,7 @@ export class HaCalendarCardEditor extends LitElement {
     const kind = this._getCardKind();
     const entities = this._getEntities();
     const firstDay = this._config.first_day_of_week ?? 1;
-    const isMinimalLayout =
-      kind !== 'month' &&
-      (this._config as WeekCardConfig | DayCardConfig).layout !== 'grid';
+    const isMinimalLayout = kind !== 'month';
     const opacityValue =
       typeof this._config.background_opacity === 'number'
         ? this._config.background_opacity
@@ -648,120 +646,62 @@ export class HaCalendarCardEditor extends LitElement {
     cfg: WeekCardConfig,
     strings: (typeof TRANSLATIONS)['es'],
   ) {
-    const isCompact = cfg.layout !== 'grid';
-
     return html`
-      <div class="two-col">
-        <div class="field">
-          <label>${strings.editorLayout}</label>
-          <select
-            .value=${cfg.layout || 'compact'}
-            @change=${(e: Event) =>
-              this._updateField(
-                'layout',
-                (e.target as HTMLSelectElement).value,
-              )}
-          >
-            <option value="compact" ?selected=${isCompact}>
-              ${strings.editorLayoutCompact}
-            </option>
-            <option value="grid" ?selected=${cfg.layout === 'grid'}>
-              ${strings.editorLayoutGrid}
-            </option>
-          </select>
-        </div>
-
-        <div class="field">
-          <label>${strings.editorDaysToShow}</label>
-          <input
-            type="number"
-            min="1"
-            max="14"
-            .value=${String(cfg.days_to_show ?? 7)}
-            @change=${(e: Event) =>
-              this._updateField(
-                'days_to_show',
-                Math.max(1, Math.min(14, Number((e.target as HTMLInputElement).value) || 7)),
-              )}
-          />
-        </div>
+      <div class="field">
+        <label>${strings.editorDaysToShow}</label>
+        <input
+          type="number"
+          min="1"
+          max="14"
+          .value=${String(cfg.days_to_show ?? 7)}
+          @change=${(e: Event) =>
+            this._updateField(
+              'days_to_show',
+              Math.max(1, Math.min(14, Number((e.target as HTMLInputElement).value) || 7)),
+            )}
+        />
       </div>
 
-      ${isCompact
-        ? html`
-            <div class="toggles-list">
-              <label class="checkbox-row">
-                <input
-                  type="checkbox"
-                  .checked=${cfg.show_week_number !== false}
-                  @change=${(e: Event) =>
-                    this._updateField(
-                      'show_week_number',
-                      (e.target as HTMLInputElement).checked,
-                    )}
-                />
-                <span>${strings.editorShowWeekNumber}</span>
-              </label>
+      <div class="toggles-list">
+        <label class="checkbox-row">
+          <input
+            type="checkbox"
+            .checked=${cfg.show_week_number !== false}
+            @change=${(e: Event) =>
+              this._updateField(
+                'show_week_number',
+                (e.target as HTMLInputElement).checked,
+              )}
+          />
+          <span>${strings.editorShowWeekNumber}</span>
+        </label>
 
-              <label class="checkbox-row">
-                <input
-                  type="checkbox"
-                  .checked=${cfg.show_progress_bar !== false}
-                  @change=${(e: Event) =>
-                    this._updateField(
-                      'show_progress_bar',
-                      (e.target as HTMLInputElement).checked,
-                    )}
-                />
-                <span>${strings.editorShowProgressBar}</span>
-              </label>
+        <label class="checkbox-row">
+          <input
+            type="checkbox"
+            .checked=${cfg.show_progress_bar !== false}
+            @change=${(e: Event) =>
+              this._updateField(
+                'show_progress_bar',
+                (e.target as HTMLInputElement).checked,
+              )}
+          />
+          <span>${strings.editorShowProgressBar}</span>
+        </label>
 
-              <label class="checkbox-row">
-                <input
-                  type="checkbox"
-                  .checked=${Boolean(cfg.show_empty_days)}
-                  @change=${(e: Event) =>
-                    this._updateField(
-                      'show_empty_days',
-                      (e.target as HTMLInputElement).checked,
-                    )}
-                />
-                <span>${strings.editorShowEmptyDays}</span>
-              </label>
-            </div>
-          `
-        : html`
-            <div class="two-col">
-              <div class="field">
-                <label>${strings.editorStartHour}</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="23"
-                  .value=${String(cfg.start_hour ?? 0)}
-                  @change=${(e: Event) =>
-                    this._updateField(
-                      'start_hour',
-                      Math.max(0, Math.min(23, Number((e.target as HTMLInputElement).value) || 0)),
-                    )}
-                />
-              </div>
-              <div class="field">
-                <label>${strings.editorEndHour}</label>
-                <input
-                  type="number"
-                  min="1"
-                  max="24"
-                  .value=${String(cfg.end_hour ?? 24)}
-                  @change=${(e: Event) =>
-                    this._updateField(
-                      'end_hour',
-                      Math.max(1, Math.min(24, Number((e.target as HTMLInputElement).value) || 24)),
-                    )}
-                />
-              </div>
-            </div>
-          `}
+        <label class="checkbox-row">
+          <input
+            type="checkbox"
+            .checked=${Boolean(cfg.show_empty_days)}
+            @change=${(e: Event) =>
+              this._updateField(
+                'show_empty_days',
+                (e.target as HTMLInputElement).checked,
+              )}
+          />
+          <span>${strings.editorShowEmptyDays}</span>
+        </label>
+      </div>
     `;
   }
 
@@ -769,105 +709,34 @@ export class HaCalendarCardEditor extends LitElement {
     cfg: DayCardConfig,
     strings: (typeof TRANSLATIONS)['es'],
   ) {
-    const isCompact = cfg.layout !== 'grid';
-
     return html`
-      <div class="field">
-        <label>${strings.editorLayout}</label>
-        <select
-          .value=${cfg.layout || 'compact'}
-          @change=${(e: Event) =>
-            this._updateField(
-              'layout',
-              (e.target as HTMLSelectElement).value,
-            )}
-        >
-          <option value="compact" ?selected=${isCompact}>
-            ${strings.editorLayoutCompact}
-          </option>
-          <option value="grid" ?selected=${cfg.layout === 'grid'}>
-            ${strings.editorLayoutGrid}
-          </option>
-        </select>
+      <div class="toggles-list">
+        <label class="checkbox-row">
+          <input
+            type="checkbox"
+            .checked=${cfg.show_week_number !== false}
+            @change=${(e: Event) =>
+              this._updateField(
+                'show_week_number',
+                (e.target as HTMLInputElement).checked,
+              )}
+          />
+          <span>${strings.editorShowWeekNumber}</span>
+        </label>
+
+        <label class="checkbox-row">
+          <input
+            type="checkbox"
+            .checked=${cfg.show_progress_bar !== false}
+            @change=${(e: Event) =>
+              this._updateField(
+                'show_progress_bar',
+                (e.target as HTMLInputElement).checked,
+              )}
+          />
+          <span>${strings.editorShowProgressBar}</span>
+        </label>
       </div>
-
-      ${isCompact
-        ? html`
-            <div class="toggles-list">
-              <label class="checkbox-row">
-                <input
-                  type="checkbox"
-                  .checked=${cfg.show_week_number !== false}
-                  @change=${(e: Event) =>
-                    this._updateField(
-                      'show_week_number',
-                      (e.target as HTMLInputElement).checked,
-                    )}
-                />
-                <span>${strings.editorShowWeekNumber}</span>
-              </label>
-
-              <label class="checkbox-row">
-                <input
-                  type="checkbox"
-                  .checked=${cfg.show_progress_bar !== false}
-                  @change=${(e: Event) =>
-                    this._updateField(
-                      'show_progress_bar',
-                      (e.target as HTMLInputElement).checked,
-                    )}
-                />
-                <span>${strings.editorShowProgressBar}</span>
-              </label>
-            </div>
-          `
-        : html`
-            <div class="two-col">
-              <div class="field">
-                <label>${strings.editorStartHour}</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="23"
-                  .value=${String(cfg.start_hour ?? 0)}
-                  @change=${(e: Event) =>
-                    this._updateField(
-                      'start_hour',
-                      Math.max(0, Math.min(23, Number((e.target as HTMLInputElement).value) || 0)),
-                    )}
-                />
-              </div>
-              <div class="field">
-                <label>${strings.editorEndHour}</label>
-                <input
-                  type="number"
-                  min="1"
-                  max="24"
-                  .value=${String(cfg.end_hour ?? 24)}
-                  @change=${(e: Event) =>
-                    this._updateField(
-                      'end_hour',
-                      Math.max(1, Math.min(24, Number((e.target as HTMLInputElement).value) || 24)),
-                    )}
-                />
-              </div>
-            </div>
-
-            <div class="toggles-list">
-              <label class="checkbox-row">
-                <input
-                  type="checkbox"
-                  .checked=${cfg.show_agenda_summary !== false}
-                  @change=${(e: Event) =>
-                    this._updateField(
-                      'show_agenda_summary',
-                      (e.target as HTMLInputElement).checked,
-                    )}
-                />
-                <span>${strings.editorShowSummary}</span>
-              </label>
-            </div>
-          `}
     `;
   }
 

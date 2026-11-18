@@ -1,6 +1,6 @@
 import type { HomeAssistant, SupportedLanguage } from './types';
 
-export const CARD_VERSION = '1.2.0';
+export const CARD_VERSION = '1.3.0';
 
 export const MONTH_CARD_TYPE = 'simple-calendar-month-card';
 export const WEEK_CARD_TYPE = 'simple-calendar-week-card';
