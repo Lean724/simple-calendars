@@ -23,9 +23,12 @@ import type {
   SupportedLanguage,
 } from '../types';
 import {
+  type DayEventFilterOptions,
+  filterAndOrderDayEvents,
   formatDayColParts,
   formatTimeMinimal,
   getEventProgressInfo,
+  isSameDay,
   startOfDay,
 } from '../utils/date-utils';
 import '../components/calendar-header';
@@ -94,9 +97,20 @@ export abstract class BaseCalendarCard<
   public connectedCallback(): void {
     super.connectedCallback();
     this._currentNow = new Date();
+    if (this.autoFollowToday() && !isSameDay(this._anchorDate, this._currentNow)) {
+      this._anchorDate = startOfDay(this._currentNow);
+    }
     this._tickerId = window.setInterval(() => {
-      this._currentNow = new Date();
+      const now = new Date();
+      this._currentNow = now;
+      if (this.autoFollowToday() && !isSameDay(this._anchorDate, now)) {
+        this._anchorDate = startOfDay(now);
+      }
     }, 30_000);
+  }
+
+  protected autoFollowToday(): boolean {
+    return false;
   }
 
   public disconnectedCallback(): void {
@@ -170,6 +184,15 @@ export abstract class BaseCalendarCard<
     return false;
   }
 
+  protected getDayFilterOptions(): DayEventFilterOptions {
+    return {
+      showAllDay: this._config?.show_all_day_events !== false,
+      allDayPosition: this._config?.all_day_position === 'bottom' ? 'bottom' : 'top',
+      showCompleted: this._config?.show_completed_events !== false,
+      now: this._currentNow,
+    };
+  }
+
   protected abstract getFetchRange(): { start: Date; end: Date };
   protected abstract getPeriodLabel(locale: string): string;
   protected abstract navigatePrev(): void;
@@ -193,18 +216,27 @@ export abstract class BaseCalendarCard<
   ): TemplateResult {
     const dateParts = formatDayColParts(dayDate, locale);
     const useEntityColor = Boolean(this._config?.use_entity_color);
+    const showCurrentDayCol = this._config?.show_current_day !== false;
+    const filteredEvents = filterAndOrderDayEvents(
+      dayEvents,
+      this.getDayFilterOptions(),
+    );
 
     return html`
       <div class="min-day-row">
-        <div class="min-date-col">
-          <span class="min-date-day">${dateParts.weekdayDay}</span>
-          <span class="min-date-month">${dateParts.month}</span>
-        </div>
+        ${showCurrentDayCol
+          ? html`
+              <div class="min-date-col">
+                <span class="min-date-day">${dateParts.weekdayDay}</span>
+                <span class="min-date-month">${dateParts.month}</span>
+              </div>
+            `
+          : nothing}
 
         <div class="min-events-col">
-          ${dayEvents.length === 0
+          ${filteredEvents.length === 0
             ? html`<div class="min-empty-text">${strings.noEvents}</div>`
-            : dayEvents.map((ev) => {
+            : filteredEvents.map((ev) => {
                 const progress = getEventProgressInfo(
                   ev,
                   this._currentNow,

@@ -1,6 +1,6 @@
-# Simple-Calendars (Month, Week & Day)
+# Simple-Calendars (Month, Week, Day & Event)
 
-Suite de **3 tarjetas personalizadas de Lovelace para Home Assistant** con diseño **minimalista**, control avanzado de **transparencias**, soporte **multi-entidad** nativo (`calendar.*`) y editor visual completo.
+Suite de **4 tarjetas personalizadas de Lovelace para Home Assistant** con diseño **minimalista**, control avanzado de **transparencias**, soporte **multi-entidad** nativo (`calendar.*`), traducciones en **7 idiomas** y editor visual completo.
 
 ![Simple-Calendars Daily Minimalist Card Preview](docs/preview-day.svg)
 
@@ -10,21 +10,21 @@ Compatible con **Home Assistant Marketplace** (anteriormente **HACS**) y con vis
 
 | Tarjeta | Tipo YAML | Descripción |
 | :--- | :--- | :--- |
+| **Event Card** | `custom:simple-calendar-event-card` | Tarjeta compacta orientada al momento actual: muestra **Eventos previos**, **Eventos actuales** (con barra de progreso) y **Eventos próximos**, con barra de título y múltiples calendarios. |
 | **Calendario Diario** | `custom:simple-calendar-day-card` | Widget minimalista con píldora de semana (`Semana 47`), resumen del día, tiempo restante y barra de progreso en tiempo real. |
 | **Calendario Semanal** | `custom:simple-calendar-week-card` | Resumen minimalista semanal por días con píldora de semana, horarios y barras de progreso. |
 | **Calendario Mensual** | `custom:simple-calendar-month-card` | Grilla mensual limpia con píldoras por color y resumen minimalista inferior del día seleccionado. |
 
-> *(Nota: para máxima retrocompatibilidad también se aceptan los alias `custom:ha-calendar-month-card`, `custom:ha-calendar-week-card` y `custom:ha-calendar-day-card`).*
+> *(Nota: para máxima retrocompatibilidad también se aceptan los alias `custom:ha-calendar-month-card`, `custom:ha-calendar-week-card`, `custom:ha-calendar-day-card` y `custom:ha-calendar-event-card`).*
 
 ## Características principales
 
-- **Diseño minimalista limpio**: las tarjetas Diaria y Semanal muestran únicamente el resumen minimalista compacto con altura automática y ancho completo (`12` columnas en *Sections*).
+- **Seguimiento en tiempo real (`Event Card`)**: visualiza de un vistazo qué acaba de terminar, qué está ocurriendo ahora mismo con barra de progreso y qué viene después.
+- **Opciones avanzadas de visualización**: mostrar/ocultar el día actual (`show_current_day`), mostrar/ocultar eventos de todo el día (`show_all_day_events`) y ubicarlos arriba o abajo (`all_day_position`), mostrar/ocultar eventos ya terminados (`show_completed_events`) y mensaje `"Sin eventos hoy"` cuando no hay actividad.
 - **Multi-entidad sin límites**: combina cualquier cantidad de entidades `calendar.*` en una misma tarjeta.
 - **Transparencias y efecto cristal (*frosted glass*)**: configura `transparent: true`, `background_opacity` (`0–100%`), `backdrop_blur`, `background_color`, `border_radius`, `hide_border` y `hide_shadow`.
-- **Personalización por calendario**: asigna `color`, `name` e `icon` propios a cada entidad (o usa la paleta automática y el nombre/ícono del estado de Home Assistant).
-- **Editor visual completo**: configura transparencias, opciones de vista, orden, colores, íconos y entidades directamente desde la interfaz de Lovelace sin escribir YAML.
-- **Modal de detalles**: haz clic en cualquier evento para ver horario completo, ubicación, descripción, calendario de origen y acceso directo al diálogo nativo de la entidad.
-- **Multi-idioma**: detección automática de **Español** e **Inglés** según el perfil de Home Assistant (o configurable manualmente).
+- **Editor visual completo**: configura todas las opciones, colores, íconos y entidades directamente desde la interfaz de Lovelace sin escribir YAML.
+- **7 idiomas integrados**: Español (`es`), Chino Simplificado (`zh-Hans`), Alemán (`de`), Inglés (`en`), Portugués (`pt`), Italiano (`it`) y Francés (`fr`), con detección automática desde Home Assistant.
 
 ---
 
@@ -35,7 +35,7 @@ Compatible con **Home Assistant Marketplace** (anteriormente **HACS**) y con vis
 1. Abre **Marketplace** (antes **HACS**) en Home Assistant.
 2. Ve a **Frontend** → menú superior derecho **⋮** → **Repositorios personalizados** (*Custom repositories*).
 3. Agrega `https://github.com/Lean724/simple-calendars` con categoría **Lovelace** / **Dashboard**.
-4. Busca **Simple-Calendars (Month, Week & Day)** e instálalo.
+4. Busca **Simple-Calendars (Month, Week, Day & Event)** e instálalo.
 5. Recarga el navegador cuando Home Assistant lo solicite.
 
 ### Instalación manual
@@ -52,8 +52,6 @@ Compatible con **Home Assistant Marketplace** (anteriormente **HACS**) y con vis
 
 ### Configuración compartida de entidades (`entities`)
 
-Cada elemento dentro de `entities` puede ser un `string` simple (ej. `calendar.personal`) o un objeto con propiedades personalizadas:
-
 | Opción | Tipo | Por defecto | Descripción |
 | :--- | :--- | :--- | :--- |
 | `entity` | `string` | **Requerido** | ID de la entidad de calendario (`calendar.*`). |
@@ -62,14 +60,18 @@ Cada elemento dentro de `entities` puede ser un `string` simple (ej. `calendar.p
 | `icon` | `string` | `mdi:calendar` | Ícono MDI para el calendario y sus eventos. |
 | `hidden` | `boolean` | `false` | Inicia oculto en el filtro rápido. |
 
-### Opciones comunes, Apariencia y Transparencia
+### Opciones comunes, Visibilidad y Transparencia
 
 | Opción | Tipo | Por defecto | Descripción |
 | :--- | :--- | :--- | :--- |
-| `title` | `string` | — | Subtítulo opcional (tarjeta mensual). |
-| `entities` | `list` | **Requerido** | Lista de entidades de calendario. |
+| `title` | `string` | — | Título mostrado en la barra superior de Event Card y Month Card. |
+| `entities` | `list` | **Requerido** | Lista de entidades de calendario (`calendar.*`). |
 | `first_day_of_week` | `number` | `1` | `1` para Lunes, `0` para Domingo. |
-| `language` | `'es' \| 'en'` | Automático | Fuerza el idioma de la tarjeta. |
+| `language` | `string` | Automático | `'es'`, `'zh-Hans'`, `'de'`, `'en'`, `'pt'`, `'it'`, `'fr'`. |
+| `show_current_day` | `boolean` | `true` | Muestra u oculta la columna/resaltado del día actual. |
+| `show_all_day_events` | `boolean` | `true` | Muestra u oculta los eventos de todo el día. |
+| `all_day_position` | `'top' \| 'bottom'` | `'top'` | Posición de los eventos de todo el día (arriba o abajo). |
+| `show_completed_events` | `boolean` | `true` | Muestra u oculta los eventos ya finalizados. |
 | `transparent` | `boolean` | `false` | Fondo 100% transparente sin bordes ni sombras. |
 | `background_opacity` | `number` | `100` | Opacidad del fondo de la tarjeta (`0` a `100`). |
 | `background_color` | `string` | Tema HA | Color base personalizado para el fondo. |
@@ -77,8 +79,35 @@ Cada elemento dentro de `entities` puede ser un `string` simple (ej. `calendar.p
 | `border_radius` | `number` | `24` | Radio de las esquinas de la tarjeta en `px`. |
 | `hide_border` | `boolean` | `false` | Oculta el borde exterior de la tarjeta. |
 | `hide_shadow` | `boolean` | `false` | Oculta la sombra de la tarjeta. |
-| `show_navigation` | `boolean` | `false` | Muestra flechas compactas `< Hoy >` en la vista minimalista. |
-| `use_entity_color` | `boolean` | `false` | Colorea el ícono y la barra de progreso con el color del calendario en modo minimalista. |
+| `use_entity_color` | `boolean` | `false` | Colorea ícono y barra de progreso con el color del calendario. |
+
+### Opciones de `Event Card` (`custom:simple-calendar-event-card`)
+
+| Opción | Tipo | Por defecto | Descripción |
+| :--- | :--- | :--- | :--- |
+| `max_previous_events` | `number` | `2` | Cantidad máxima de eventos previos a mostrar (`0` oculta la sección). |
+| `max_upcoming_events` | `number` | `2` | Cantidad máxima de eventos próximos a mostrar (`0` oculta la sección). |
+| `show_progress_bar` | `boolean` | `true` | Muestra la barra de progreso en los eventos actuales. |
+| `show_entity_toggles` | `boolean` | `false` | Muestra filtros rápidos por calendario en la barra de título. |
+
+```yaml
+type: custom:simple-calendar-event-card
+title: Agenda del momento
+max_previous_events: 3
+max_upcoming_events: 2
+show_all_day_events: true
+all_day_position: top
+show_completed_events: true
+background_opacity: 85
+backdrop_blur: 12
+entities:
+  - entity: calendar.trabajo
+    name: Trabajo
+    icon: mdi:briefcase
+  - entity: calendar.personal
+    name: Personal
+    icon: mdi:account
+```
 
 ### Opciones de la tarjeta Diaria (`custom:simple-calendar-day-card`)
 
@@ -86,14 +115,16 @@ Cada elemento dentro de `entities` puede ser un `string` simple (ej. `calendar.p
 | :--- | :--- | :--- | :--- |
 | `show_week_number` | `boolean` | `true` | Muestra la píldora `Semana XX` arriba a la izquierda. |
 | `show_progress_bar` | `boolean` | `true` | Muestra la barra de progreso y tiempo restante/duración. |
+| `show_navigation` | `boolean` | `false` | Muestra flechas compactas `< Hoy >`. |
 
 ```yaml
 type: custom:simple-calendar-day-card
 show_week_number: true
 show_progress_bar: true
-background_opacity: 85
-backdrop_blur: 12
-border_radius: 24
+show_current_day: true
+show_all_day_events: true
+all_day_position: top
+show_completed_events: true
 entities:
   - entity: calendar.fer_trabajo
     name: Fer trabajo
@@ -111,17 +142,7 @@ entities:
 | `show_week_number` | `boolean` | `true` | Muestra la píldora de semana. |
 | `show_progress_bar` | `boolean` | `true` | Muestra la barra de progreso por evento. |
 | `show_empty_days` | `boolean` | `false` | Incluye días sin eventos en el resumen semanal. |
-
-```yaml
-type: custom:simple-calendar-week-card
-days_to_show: 7
-show_empty_days: false
-entities:
-  - entity: calendar.personal
-    icon: mdi:account
-  - entity: calendar.trabajo
-    icon: mdi:briefcase
-```
+| `show_navigation` | `boolean` | `false` | Muestra flechas compactas `< Hoy >`. |
 
 ### Opciones de la tarjeta Mensual (`custom:simple-calendar-month-card`)
 
@@ -132,18 +153,6 @@ entities:
 | `compact` | `boolean` | `true` | Celda compacta de altura ajustada. |
 | `show_header` | `boolean` | `true` | Muestra la barra de navegación del mes. |
 | `show_entity_toggles` | `boolean` | `false` | Muestra chips interactivos para filtrar calendarios. |
-
-```yaml
-type: custom:simple-calendar-month-card
-first_day_of_week: 1
-max_events_per_day: 3
-compact: true
-entities:
-  - entity: calendar.personal
-    color: "#1a73e8"
-  - entity: calendar.trabajo
-    color: "#e67c73"
-```
 
 ---
 

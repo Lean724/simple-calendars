@@ -1,4 +1,10 @@
-import type { CalendarEvent, EventLayoutItem, MonthGridDay, SupportedLanguage } from '../types';
+import type {
+  AllDayPosition,
+  CalendarEvent,
+  EventLayoutItem,
+  MonthGridDay,
+  SupportedLanguage,
+} from '../types';
 
 export function startOfDay(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
@@ -125,17 +131,52 @@ export function eventOccursOnDay(
   return startMs < dayEndMs && endMs > dayStartMs;
 }
 
-export function getEventsForDay(events: CalendarEvent[], date: Date): CalendarEvent[] {
-  const dayStart = startOfDay(date);
-  const dayEnd = endOfDay(date);
-  return events
-    .filter((ev) => eventOccursOnDay(ev, dayStart, dayEnd))
+export interface DayEventFilterOptions {
+  showAllDay?: boolean;
+  allDayPosition?: AllDayPosition;
+  showCompleted?: boolean;
+  now?: Date;
+}
+
+export function filterAndOrderDayEvents(
+  dayEvents: CalendarEvent[],
+  options: DayEventFilterOptions = {},
+): CalendarEvent[] {
+  const showAllDay = options.showAllDay !== false;
+  const allDayPos: AllDayPosition = options.allDayPosition === 'bottom' ? 'bottom' : 'top';
+  const showCompleted = options.showCompleted !== false;
+  const nowMs = (options.now || new Date()).getTime();
+
+  return dayEvents
+    .filter((ev) => {
+      if (!showAllDay && ev.allDay) {
+        return false;
+      }
+      if (!showCompleted && ev.end.getTime() <= nowMs) {
+        return false;
+      }
+      return true;
+    })
     .sort((a, b) => {
       if (a.allDay !== b.allDay) {
+        if (allDayPos === 'bottom') {
+          return a.allDay ? 1 : -1;
+        }
         return a.allDay ? -1 : 1;
       }
       return a.start.getTime() - b.start.getTime();
     });
+}
+
+export function getEventsForDay(
+  events: CalendarEvent[],
+  date: Date,
+  options?: DayEventFilterOptions,
+): CalendarEvent[] {
+  const dayStart = startOfDay(date);
+  const dayEnd = endOfDay(date);
+  const matched = events.filter((ev) => eventOccursOnDay(ev, dayStart, dayEnd));
+  return filterAndOrderDayEvents(matched, options);
 }
 
 interface InternalLayoutEntry {
@@ -334,6 +375,28 @@ export function formatDayTitle(date: Date, locale: string): string {
   return capitalizeFirst(formatted);
 }
 
+const CONNECTOR_BY_LANG: Record<SupportedLanguage, string> = {
+  es: 'a',
+  'zh-Hans': '-',
+  de: 'bis',
+  en: 'to',
+  pt: 'a',
+  it: 'alle',
+  fr: 'à',
+};
+
+export function formatEventInlineRange(
+  event: CalendarEvent,
+  lang: SupportedLanguage,
+  allDayLabel: string,
+): string {
+  if (event.allDay) {
+    return allDayLabel;
+  }
+  const connector = CONNECTOR_BY_LANG[lang] || 'a';
+  return `${formatTimeMinimal(event.start)} ${connector} ${formatTimeMinimal(event.end)}`;
+}
+
 export function formatEventTimeRange(
   event: CalendarEvent,
   locale: string,
@@ -367,7 +430,7 @@ export function formatEventTimeRange(
   if (sameDay) {
     return `${capitalizeFirst(dateFmt.format(event.start))}, ${startTime} – ${endTime}`;
   }
-  const connector = lang === 'es' ? 'a' : 'to';
+  const connector = CONNECTOR_BY_LANG[lang] || 'to';
   return `${capitalizeFirst(dateFmt.format(event.start))} ${startTime} ${connector} ${capitalizeFirst(dateFmt.format(event.end))} ${endTime}`;
 }
 

@@ -2,6 +2,7 @@ import { html, nothing } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import {
   DAY_CARD_TYPE,
+  formatWeekBadge,
   type TranslationStrings,
 } from '../constants';
 import { sharedCardStyles } from '../styles/shared-styles';
@@ -82,10 +83,14 @@ export class HaCalendarDayCard extends BaseCalendarCard<DayCardConfig> {
     visibleEvents: CalendarEvent[],
     _entities: NormalizedCalendarEntity[],
     locale: string,
-    _lang: SupportedLanguage,
+    lang: SupportedLanguage,
     strings: TranslationStrings,
   ) {
-    const dayEvents = getEventsForDay(visibleEvents, this._anchorDate);
+    const dayEvents = getEventsForDay(
+      visibleEvents,
+      this._anchorDate,
+      this.getDayFilterOptions(),
+    );
     const showWeekNum = this._config.show_week_number !== false;
     const showProgressBar = this._config.show_progress_bar !== false;
     const showNav = Boolean(this._config.show_navigation);
@@ -96,7 +101,7 @@ export class HaCalendarDayCard extends BaseCalendarCard<DayCardConfig> {
         ? html`
             <div class="minimal-top-bar">
               ${showWeekNum
-                ? html`<span class="week-pill">${strings.weekLabel} ${weekNum}</span>`
+                ? html`<span class="week-pill">${formatWeekBadge(weekNum, lang, strings)}</span>`
                 : html`<span></span>`}
 
               ${showNav

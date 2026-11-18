@@ -121,6 +121,8 @@ export class HaCalendarMonthCard extends BaseCalendarCard<MonthCardConfig> {
     const showWeekNumbers = Boolean(this._config.show_week_numbers);
     const compact = this._config.compact !== false;
     const maxEvents = Math.max(1, this._config.max_events_per_day ?? 3);
+    const showCurrentDay = this._config.show_current_day !== false;
+    const filterOpts = this.getDayFilterOptions();
 
     const weekdays = getWeekdayLabels(this.getFirstDayOfWeek(), locale);
     const gridDays = this._getGridDays();
@@ -130,7 +132,7 @@ export class HaCalendarMonthCard extends BaseCalendarCard<MonthCardConfig> {
       weeks.push(gridDays.slice(i, i + 7));
     }
 
-    const focusedDayEvents = getEventsForDay(visibleEvents, this._focusedDay);
+    const focusedDayEvents = getEventsForDay(visibleEvents, this._focusedDay, filterOpts);
 
     return html`
       <div class="month-grid-wrap ${compact ? 'is-compact' : ''}">
@@ -154,20 +156,21 @@ export class HaCalendarMonthCard extends BaseCalendarCard<MonthCardConfig> {
                   ? html`<div class="week-number-cell">${week[0].weekNumber}</div>`
                   : nothing}
                 ${week.map((day) => {
-                  const dayEvents = getEventsForDay(visibleEvents, day.date);
+                  const dayEvents = getEventsForDay(visibleEvents, day.date, filterOpts);
                   const visibleDayEvents = dayEvents.slice(0, maxEvents);
                   const hiddenCount = dayEvents.length - visibleDayEvents.length;
                   const isFocused = isSameDay(day.date, this._focusedDay);
+                  const markToday = showCurrentDay && day.isToday;
 
                   return html`
                     <div
-                      class="day-cell ${day.isCurrentMonth ? '' : 'outside-month'} ${day.isToday ? 'is-today' : ''} ${isFocused ? 'is-focused' : ''}"
+                      class="day-cell ${day.isCurrentMonth ? '' : 'outside-month'} ${markToday ? 'is-today' : ''} ${isFocused ? 'is-focused' : ''}"
                       @click=${() => {
                         this._focusedDay = day.date;
                       }}
                     >
                       <div class="day-cell-top">
-                        <span class="day-num ${day.isToday ? 'today-circle' : ''}">
+                        <span class="day-num ${markToday ? 'today-circle' : ''}">
                           ${day.date.getDate()}
                         </span>
                       </div>

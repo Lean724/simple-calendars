@@ -2,6 +2,7 @@ import { css, html, nothing } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import {
   WEEK_CARD_TYPE,
+  formatWeekBadge,
   type TranslationStrings,
 } from '../constants';
 import { sharedCardStyles } from '../styles/shared-styles';
@@ -103,7 +104,7 @@ export class HaCalendarWeekCard extends BaseCalendarCard<WeekCardConfig> {
     visibleEvents: CalendarEvent[],
     _entities: NormalizedCalendarEntity[],
     locale: string,
-    _lang: SupportedLanguage,
+    lang: SupportedLanguage,
     strings: TranslationStrings,
   ) {
     const days = this._getVisibleDays();
@@ -112,10 +113,11 @@ export class HaCalendarWeekCard extends BaseCalendarCard<WeekCardConfig> {
     const showNav = Boolean(this._config.show_navigation);
     const showEmptyDays = Boolean(this._config.show_empty_days);
     const weekNum = getISOWeekNumber(days[0] || this._anchorDate);
+    const filterOpts = this.getDayFilterOptions();
 
     const dayEntries = days.map((day) => ({
       day,
-      events: getEventsForDay(visibleEvents, day),
+      events: getEventsForDay(visibleEvents, day, filterOpts),
     }));
 
     const filteredEntries = showEmptyDays
@@ -131,7 +133,7 @@ export class HaCalendarWeekCard extends BaseCalendarCard<WeekCardConfig> {
             <div class="minimal-top-bar">
               <div class="week-header-left">
                 ${showWeekNum
-                  ? html`<span class="week-pill">${strings.weekLabel} ${weekNum}</span>`
+                  ? html`<span class="week-pill">${formatWeekBadge(weekNum, lang, strings)}</span>`
                   : nothing}
                 <span class="week-range-sub">${formatWeekRangeTitle(days, locale)}</span>
               </div>

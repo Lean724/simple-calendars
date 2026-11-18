@@ -1,7 +1,9 @@
 import {
   CARD_VERSION,
   DAY_CARD_TYPE,
+  EVENT_CARD_TYPE,
   LEGACY_DAY_CARD_TYPE,
+  LEGACY_EVENT_CARD_TYPE,
   LEGACY_MONTH_CARD_TYPE,
   LEGACY_WEEK_CARD_TYPE,
   MONTH_CARD_TYPE,
@@ -10,6 +12,7 @@ import {
 import './cards/month-card';
 import './cards/week-card';
 import './cards/day-card';
+import './cards/event-card';
 import './editor/card-editor';
 
 interface CustomCardRegistration {
@@ -38,6 +41,10 @@ if (!customElements.get(LEGACY_DAY_CARD_TYPE)) {
   const DayClass = customElements.get(DAY_CARD_TYPE);
   if (DayClass) customElements.define(LEGACY_DAY_CARD_TYPE, class extends DayClass {});
 }
+if (!customElements.get(LEGACY_EVENT_CARD_TYPE)) {
+  const EventClass = customElements.get(EVENT_CARD_TYPE);
+  if (EventClass) customElements.define(LEGACY_EVENT_CARD_TYPE, class extends EventClass {});
+}
 
 const CARDS_TO_REGISTER: CustomCardRegistration[] = [
   {
@@ -51,14 +58,21 @@ const CARDS_TO_REGISTER: CustomCardRegistration[] = [
     type: WEEK_CARD_TYPE,
     name: 'Simple Calendar - Week (Multi-Entity)',
     description:
-      'Weekly hourly time-grid calendar view supporting multiple calendar entities, all-day events, and current time indicator.',
+      'Minimalist weekly summary view supporting multiple calendar entities, progress bars, and custom styling.',
     preview: true,
   },
   {
     type: DAY_CARD_TYPE,
     name: 'Simple Calendar - Day (Multi-Entity)',
     description:
-      'Detailed daily schedule view supporting multiple calendar entities, summary badges, and hourly blocks.',
+      'Minimalist daily agenda widget with week pill, progress bars, and multi-calendar support.',
+    preview: true,
+  },
+  {
+    type: EVENT_CARD_TYPE,
+    name: 'Simple Calendar - Event Card (Multi-Entity)',
+    description:
+      'Compact now/next event tracker displaying previous, current (with progress bar), and upcoming events.',
     preview: true,
   },
 ];

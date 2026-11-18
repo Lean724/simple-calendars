@@ -72,7 +72,16 @@ export interface CalendarEvent {
   icon: string;
 }
 
-export type SupportedLanguage = 'es' | 'en';
+export type SupportedLanguage =
+  | 'es'
+  | 'zh-Hans'
+  | 'de'
+  | 'en'
+  | 'pt'
+  | 'it'
+  | 'fr';
+
+export type AllDayPosition = 'top' | 'bottom';
 
 export interface BaseCalendarCardConfig {
   type: string;
@@ -85,6 +94,10 @@ export interface BaseCalendarCardConfig {
   show_entity_toggles?: boolean;
   show_navigation?: boolean;
   use_entity_color?: boolean;
+  show_current_day?: boolean;
+  show_all_day_events?: boolean;
+  all_day_position?: AllDayPosition;
+  show_completed_events?: boolean;
   transparent?: boolean;
   background_color?: string;
   background_opacity?: number;
@@ -112,7 +125,17 @@ export interface DayCardConfig extends BaseCalendarCardConfig {
   show_progress_bar?: boolean;
 }
 
-export type AnyCalendarCardConfig = MonthCardConfig | WeekCardConfig | DayCardConfig;
+export interface EventCardConfig extends BaseCalendarCardConfig {
+  max_previous_events?: number;
+  max_upcoming_events?: number;
+  show_progress_bar?: boolean;
+}
+
+export type AnyCalendarCardConfig =
+  | MonthCardConfig
+  | WeekCardConfig
+  | DayCardConfig
+  | EventCardConfig;
 
 export interface MonthGridDay {
   date: Date;

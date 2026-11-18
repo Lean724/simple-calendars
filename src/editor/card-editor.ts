@@ -5,14 +5,18 @@ import {
   DEFAULT_CALENDAR_COLORS,
   DEFAULT_ICON,
   EDITOR_TAG,
+  EVENT_CARD_TYPE,
+  LANGUAGE_LABELS,
   TRANSLATIONS,
   WEEK_CARD_TYPE,
   resolveLanguage,
 } from '../constants';
 import type {
+  AllDayPosition,
   AnyCalendarCardConfig,
   CalendarEntityConfig,
   DayCardConfig,
+  EventCardConfig,
   HomeAssistant,
   MonthCardConfig,
   SupportedLanguage,
@@ -121,8 +125,9 @@ export class HaCalendarCardEditor extends LitElement {
     this._updateEntities(list);
   }
 
-  private _getCardKind(): 'month' | 'week' | 'day' {
+  private _getCardKind(): 'month' | 'week' | 'day' | 'event' {
     const type = (this._config?.type || '').toLowerCase();
+    if (type.includes(EVENT_CARD_TYPE) || type.includes('event')) return 'event';
     if (type.includes(WEEK_CARD_TYPE) || type.includes('week')) return 'week';
     if (type.includes(DAY_CARD_TYPE) || type.includes('day')) return 'day';
     return 'month';
@@ -228,6 +233,7 @@ export class HaCalendarCardEditor extends LitElement {
     const kind = this._getCardKind();
     const entities = this._getEntities();
     const firstDay = this._config.first_day_of_week ?? 1;
+    const selectedLang = this._config.language;
     const isMinimalLayout = kind !== 'month';
     const opacityValue =
       typeof this._config.background_opacity === 'number'
@@ -286,50 +292,24 @@ export class HaCalendarCardEditor extends LitElement {
                   )}
               >
                 <option value="">${strings.editorLangAuto}</option>
-                <option value="es" ?selected=${this._config.language === 'es'}>
-                  Español
-                </option>
-                <option value="en" ?selected=${this._config.language === 'en'}>
-                  English
-                </option>
+                ${(Object.keys(LANGUAGE_LABELS) as SupportedLanguage[]).map(
+                  (code) => html`
+                    <option value=${code} ?selected=${selectedLang === code}>
+                      ${LANGUAGE_LABELS[code]}
+                    </option>
+                  `,
+                )}
               </select>
             </div>
           </div>
 
           <div class="toggles-list">
-            ${isMinimalLayout
+            ${kind === 'event'
               ? html`
                   <label class="checkbox-row">
                     <input
                       type="checkbox"
-                      .checked=${Boolean(this._config.show_navigation)}
-                      @change=${(e: Event) =>
-                        this._updateField(
-                          'show_navigation',
-                          (e.target as HTMLInputElement).checked,
-                        )}
-                    />
-                    <span>${strings.editorShowNavigation}</span>
-                  </label>
-                `
-              : html`
-                  <label class="checkbox-row">
-                    <input
-                      type="checkbox"
-                      .checked=${this._config.show_header !== false}
-                      @change=${(e: Event) =>
-                        this._updateField(
-                          'show_header',
-                          (e.target as HTMLInputElement).checked,
-                        )}
-                    />
-                    <span>${strings.editorShowHeader}</span>
-                  </label>
-
-                  <label class="checkbox-row">
-                    <input
-                      type="checkbox"
-                      .checked=${this._config.show_entity_toggles !== false}
+                      .checked=${Boolean(this._config.show_entity_toggles)}
                       @change=${(e: Event) =>
                         this._updateField(
                           'show_entity_toggles',
@@ -338,7 +318,49 @@ export class HaCalendarCardEditor extends LitElement {
                     />
                     <span>${strings.editorShowToggles}</span>
                   </label>
-                `}
+                `
+              : isMinimalLayout
+                ? html`
+                    <label class="checkbox-row">
+                      <input
+                        type="checkbox"
+                        .checked=${Boolean(this._config.show_navigation)}
+                        @change=${(e: Event) =>
+                          this._updateField(
+                            'show_navigation',
+                            (e.target as HTMLInputElement).checked,
+                          )}
+                      />
+                      <span>${strings.editorShowNavigation}</span>
+                    </label>
+                  `
+                : html`
+                    <label class="checkbox-row">
+                      <input
+                        type="checkbox"
+                        .checked=${this._config.show_header !== false}
+                        @change=${(e: Event) =>
+                          this._updateField(
+                            'show_header',
+                            (e.target as HTMLInputElement).checked,
+                          )}
+                      />
+                      <span>${strings.editorShowHeader}</span>
+                    </label>
+
+                    <label class="checkbox-row">
+                      <input
+                        type="checkbox"
+                        .checked=${this._config.show_entity_toggles !== false}
+                        @change=${(e: Event) =>
+                          this._updateField(
+                            'show_entity_toggles',
+                            (e.target as HTMLInputElement).checked,
+                          )}
+                      />
+                      <span>${strings.editorShowToggles}</span>
+                    </label>
+                  `}
           </div>
         </div>
 
@@ -469,11 +491,88 @@ export class HaCalendarCardEditor extends LitElement {
         <!-- Card View Section -->
         <div class="section">
           <div class="section-title">${strings.editorViewSection}</div>
+
+          <div class="toggles-list">
+            ${kind !== 'event'
+              ? html`
+                  <label class="checkbox-row">
+                    <input
+                      type="checkbox"
+                      .checked=${this._config.show_current_day !== false}
+                      @change=${(e: Event) =>
+                        this._updateField(
+                          'show_current_day',
+                          (e.target as HTMLInputElement).checked,
+                        )}
+                    />
+                    <span>${strings.editorShowCurrentDay}</span>
+                  </label>
+                `
+              : nothing}
+
+            <label class="checkbox-row">
+              <input
+                type="checkbox"
+                .checked=${this._config.show_all_day_events !== false}
+                @change=${(e: Event) =>
+                  this._updateField(
+                    'show_all_day_events',
+                    (e.target as HTMLInputElement).checked,
+                  )}
+              />
+              <span>${strings.editorShowAllDayEvents}</span>
+            </label>
+
+            <label class="checkbox-row">
+              <input
+                type="checkbox"
+                .checked=${this._config.show_completed_events !== false}
+                @change=${(e: Event) =>
+                  this._updateField(
+                    'show_completed_events',
+                    (e.target as HTMLInputElement).checked,
+                  )}
+              />
+              <span>${strings.editorShowCompletedEvents}</span>
+            </label>
+          </div>
+
+          ${this._config.show_all_day_events !== false
+            ? html`
+                <div class="field">
+                  <label>${strings.editorAllDayPosition}</label>
+                  <select
+                    .value=${this._config.all_day_position || 'top'}
+                    @change=${(e: Event) =>
+                      this._updateField(
+                        'all_day_position',
+                        (e.target as HTMLSelectElement).value as AllDayPosition,
+                      )}
+                  >
+                    <option
+                      value="top"
+                      ?selected=${(this._config.all_day_position || 'top') === 'top'}
+                    >
+                      ${strings.editorPositionTop}
+                    </option>
+                    <option
+                      value="bottom"
+                      ?selected=${this._config.all_day_position === 'bottom'}
+                    >
+                      ${strings.editorPositionBottom}
+                    </option>
+                  </select>
+                </div>
+              `
+            : nothing}
+
           ${kind === 'month'
             ? this._renderMonthOptions(this._config as MonthCardConfig, strings)
             : kind === 'week'
               ? this._renderWeekOptions(this._config as WeekCardConfig, strings)
-              : this._renderDayOptions(this._config as DayCardConfig, strings)}
+              : kind === 'event'
+                ? this._renderEventOptions(this._config as EventCardConfig, strings)
+                : this._renderDayOptions(this._config as DayCardConfig, strings)}
         </div>
 
         <!-- Multi-entity Section -->
@@ -724,6 +823,60 @@ export class HaCalendarCardEditor extends LitElement {
           <span>${strings.editorShowWeekNumber}</span>
         </label>
 
+        <label class="checkbox-row">
+          <input
+            type="checkbox"
+            .checked=${cfg.show_progress_bar !== false}
+            @change=${(e: Event) =>
+              this._updateField(
+                'show_progress_bar',
+                (e.target as HTMLInputElement).checked,
+              )}
+          />
+          <span>${strings.editorShowProgressBar}</span>
+        </label>
+      </div>
+    `;
+  }
+
+  private _renderEventOptions(
+    cfg: EventCardConfig,
+    strings: (typeof TRANSLATIONS)['es'],
+  ) {
+    return html`
+      <div class="two-col">
+        <div class="field">
+          <label>${strings.editorMaxPreviousEvents}</label>
+          <input
+            type="number"
+            min="0"
+            max="10"
+            .value=${String(cfg.max_previous_events ?? 2)}
+            @change=${(e: Event) =>
+              this._updateField(
+                'max_previous_events',
+                Math.max(0, Math.min(10, Number((e.target as HTMLInputElement).value) || 0)),
+              )}
+          />
+        </div>
+
+        <div class="field">
+          <label>${strings.editorMaxUpcomingEvents}</label>
+          <input
+            type="number"
+            min="0"
+            max="10"
+            .value=${String(cfg.max_upcoming_events ?? 2)}
+            @change=${(e: Event) =>
+              this._updateField(
+                'max_upcoming_events',
+                Math.max(0, Math.min(10, Number((e.target as HTMLInputElement).value) || 0)),
+              )}
+          />
+        </div>
+      </div>
+
+      <div class="toggles-list">
         <label class="checkbox-row">
           <input
             type="checkbox"
