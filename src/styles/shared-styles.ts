@@ -41,8 +41,22 @@ export const sharedCardStyles = css`
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    background: var(--cal-surface);
+    background: var(--cal-card-bg, var(--cal-surface));
     color: var(--cal-text-primary);
+    border-radius: var(--ha-card-border-radius, 18px);
+    transition: background 0.2s ease, border-color 0.2s ease;
+  }
+
+  ha-card.is-transparent {
+    background: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+  }
+
+  ha-card.has-opacity {
+    background: var(--cal-card-bg) !important;
+    backdrop-filter: blur(var(--cal-backdrop-blur, 16px));
+    -webkit-backdrop-filter: blur(var(--cal-backdrop-blur, 16px));
   }
 
   .card-content-wrap {

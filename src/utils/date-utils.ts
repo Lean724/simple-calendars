@@ -369,3 +369,129 @@ export function capitalizeFirst(text: string): string {
   if (!text) return text;
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
+
+export interface EventProgressInfo {
+  progressPct: number;
+  label: string;
+  isOngoing: boolean;
+  isPast: boolean;
+  isFuture: boolean;
+}
+
+export function getEventProgressInfo(
+  event: CalendarEvent,
+  now: Date,
+  strings: {
+    hoursRemaining: string;
+    hourRemaining: string;
+    minutesRemaining: string;
+    completed: string;
+    startsIn: string;
+    allDay: string;
+  },
+): EventProgressInfo {
+  if (event.allDay) {
+    const todayStart = startOfDay(now).getTime();
+    const eventStartDay = startOfDay(event.start).getTime();
+    const eventEndDay = startOfDay(event.end).getTime();
+
+    if (todayStart < eventStartDay) {
+      return {
+        progressPct: 0,
+        label: strings.allDay,
+        isOngoing: false,
+        isPast: false,
+        isFuture: true,
+      };
+    }
+    if (todayStart >= eventEndDay) {
+      return {
+        progressPct: 100,
+        label: strings.completed,
+        isOngoing: false,
+        isPast: true,
+        isFuture: false,
+      };
+    }
+
+    const dayMinutesElapsed = now.getHours() * 60 + now.getMinutes();
+    const pct = Math.min(100, Math.max(0, (dayMinutesElapsed / 1440) * 100));
+    return {
+      progressPct: pct,
+      label: strings.allDay,
+      isOngoing: true,
+      isPast: false,
+      isFuture: false,
+    };
+  }
+
+  const startMs = event.start.getTime();
+  const endMs = event.end.getTime();
+  const nowMs = now.getTime();
+  const totalMs = Math.max(60000, endMs - startMs);
+
+  if (nowMs < startMs) {
+    const diffMs = startMs - nowMs;
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffMins = Math.round((diffMs % 3600000) / 60000);
+    const timeText =
+      diffHours > 0
+        ? `${diffHours} ${diffHours === 1 ? strings.hourRemaining : strings.hoursRemaining}`
+        : `${Math.max(1, diffMins)} ${strings.minutesRemaining}`;
+    return {
+      progressPct: 0,
+      label: `${strings.startsIn} ${timeText}`,
+      isOngoing: false,
+      isPast: false,
+      isFuture: true,
+    };
+  }
+
+  if (nowMs >= endMs) {
+    return {
+      progressPct: 100,
+      label: strings.completed,
+      isOngoing: false,
+      isPast: true,
+      isFuture: false,
+    };
+  }
+
+  const elapsedMs = nowMs - startMs;
+  const progressPct = Math.min(100, Math.max(0, (elapsedMs / totalMs) * 100));
+  const remainingMs = endMs - nowMs;
+  const remHours = Math.floor(remainingMs / 3600000);
+  const remMins = Math.round((remainingMs % 3600000) / 60000);
+
+  let label = '';
+  if (remHours >= 1) {
+    label = `${remHours} ${remHours === 1 ? strings.hourRemaining : strings.hoursRemaining}`;
+  } else {
+    label = `${Math.max(1, remMins)} ${strings.minutesRemaining}`;
+  }
+
+  return {
+    progressPct,
+    label,
+    isOngoing: true,
+    isPast: false,
+    isFuture: false,
+  };
+}
+
+export function formatDayColParts(
+  date: Date,
+  locale: string,
+): { weekdayDay: string; month: string } {
+  const weekday = new Intl.DateTimeFormat(locale, { weekday: 'short' })
+    .format(date)
+    .replace(/\.$/, '');
+  const day = date.getDate();
+  const month = new Intl.DateTimeFormat(locale, { month: 'short' })
+    .format(date)
+    .replace(/\.$/, '');
+  return {
+    weekdayDay: `${weekday}. ${day}`,
+    month: month,
+  };
+}

@@ -48,8 +48,22 @@ export interface TranslationStrings {
   eventsCount: string;
   allDayEvents: string;
   timedEvents: string;
+  weekLabel: string;
+  hoursRemaining: string;
+  hourRemaining: string;
+  minutesRemaining: string;
+  completed: string;
+  startsIn: string;
   editorGeneralSection: string;
+  editorAppearanceSection: string;
+  editorTransparent: string;
+  editorBackgroundOpacity: string;
   editorViewSection: string;
+  editorLayout: string;
+  editorLayoutCompact: string;
+  editorLayoutGrid: string;
+  editorShowWeekNumber: string;
+  editorShowProgressBar: string;
   editorEntitiesTitle: string;
   editorTitle: string;
   editorTitlePlaceholder: string;
@@ -99,8 +113,22 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     eventsCount: 'eventos',
     allDayEvents: 'Todo el día',
     timedEvents: 'Con horario',
+    weekLabel: 'Semana',
+    hoursRemaining: 'horas',
+    hourRemaining: 'hora',
+    minutesRemaining: 'minutos',
+    completed: 'Finalizado',
+    startsIn: 'Empieza en',
     editorGeneralSection: 'Configuración general',
+    editorAppearanceSection: 'Apariencia y Transparencia',
+    editorTransparent: 'Fondo transparente',
+    editorBackgroundOpacity: 'Opacidad del fondo (%)',
     editorViewSection: 'Opciones de vista',
+    editorLayout: 'Diseño de la tarjeta',
+    editorLayoutCompact: 'Widget estilizado (compacto)',
+    editorLayoutGrid: 'Grilla horaria detallada',
+    editorShowWeekNumber: 'Mostrar número de semana',
+    editorShowProgressBar: 'Mostrar barra de progreso',
     editorEntitiesTitle: 'Calendarios (Multi-entidad)',
     editorTitle: 'Título (opcional)',
     editorTitlePlaceholder: 'Ej. Calendario Familiar',
@@ -148,8 +176,22 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     eventsCount: 'events',
     allDayEvents: 'All day',
     timedEvents: 'Scheduled',
+    weekLabel: 'Week',
+    hoursRemaining: 'hours',
+    hourRemaining: 'hour',
+    minutesRemaining: 'minutes',
+    completed: 'Completed',
+    startsIn: 'Starts in',
     editorGeneralSection: 'General settings',
+    editorAppearanceSection: 'Appearance & Transparency',
+    editorTransparent: 'Transparent background',
+    editorBackgroundOpacity: 'Background opacity (%)',
     editorViewSection: 'View options',
+    editorLayout: 'Card layout',
+    editorLayoutCompact: 'Stylized widget (compact)',
+    editorLayoutGrid: 'Detailed hourly grid',
+    editorShowWeekNumber: 'Show week number',
+    editorShowProgressBar: 'Show progress bar',
     editorEntitiesTitle: 'Calendars (Multi-entity)',
     editorTitle: 'Title (optional)',
     editorTitlePlaceholder: 'e.g. Family Calendar',

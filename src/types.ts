@@ -83,6 +83,8 @@ export interface BaseCalendarCardConfig {
   language?: SupportedLanguage;
   show_header?: boolean;
   show_entity_toggles?: boolean;
+  transparent?: boolean;
+  background_opacity?: number;
 }
 
 export interface MonthCardConfig extends BaseCalendarCardConfig {
@@ -99,6 +101,9 @@ export interface WeekCardConfig extends BaseCalendarCardConfig {
 }
 
 export interface DayCardConfig extends BaseCalendarCardConfig {
+  layout?: 'compact' | 'grid';
+  show_week_number?: boolean;
+  show_progress_bar?: boolean;
   start_hour?: number;
   end_hour?: number;
   show_agenda_summary?: boolean;

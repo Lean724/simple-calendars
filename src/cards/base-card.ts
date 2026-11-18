@@ -250,8 +250,26 @@ export abstract class BaseCalendarCard<
     const showHeader = this._config.show_header !== false;
     const showToggles = this._config.show_entity_toggles !== false;
 
+    const isTransparent = Boolean(this._config.transparent);
+    const hasExplicitOpacity =
+      typeof this._config.background_opacity === 'number' &&
+      !Number.isNaN(this._config.background_opacity);
+    const bgOpacity = hasExplicitOpacity
+      ? Math.max(0, Math.min(100, this._config.background_opacity!))
+      : (isTransparent ? 0 : 100);
+
+    const hasOpacity = (hasExplicitOpacity && bgOpacity < 100) && !isTransparent;
+    const cardStyle = isTransparent
+      ? 'background: transparent !important; border-color: transparent !important; box-shadow: none !important;'
+      : hasOpacity
+        ? `--cal-card-bg: rgba(var(--rgb-card-background-color, 32, 33, 36), ${bgOpacity / 100});`
+        : '';
+
     return html`
-      <ha-card>
+      <ha-card
+        class="${isTransparent ? 'is-transparent' : ''} ${hasOpacity ? 'has-opacity' : ''}"
+        style="${cardStyle}"
+      >
         <div class="loading-bar ${this._loading ? 'active' : ''}"></div>
 
         ${showHeader

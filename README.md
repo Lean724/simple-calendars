@@ -69,6 +69,8 @@ Cada elemento dentro de `entities` puede ser un `string` simple (ej. `calendar.p
 | `language` | `'es' \| 'en'` | Automático | Fuerza el idioma de la tarjeta. |
 | `show_header` | `boolean` | `true` | Muestra la barra de navegación y título. |
 | `show_entity_toggles` | `boolean` | `true` | Muestra los chips para filtrar calendarios. |
+| `transparent` | `boolean` | `false` | Fondo 100% transparente sin bordes ni sombras. |
+| `background_opacity` | `number` | `100` | Opacidad del fondo de la tarjeta (`0` a `100`) con efecto cristal translúcido (*frosted glass*). |
 
 ### Opciones de la tarjeta Mensual (`custom:simple-calendar-month-card`)
 
@@ -81,6 +83,8 @@ Cada elemento dentro de `entities` puede ser un `string` simple (ej. `calendar.p
 ```yaml
 type: custom:simple-calendar-month-card
 title: Agenda del Hogar
+transparent: false
+background_opacity: 85
 first_day_of_week: 1
 max_events_per_day: 3
 show_week_numbers: true
@@ -126,20 +130,29 @@ entities:
 
 ### Opciones de la tarjeta Diaria (`custom:simple-calendar-day-card`)
 
+Por defecto adopta el diseño **widget estilizado compacto** (con píldora de número de semana, columna de día/mes, barra de progreso en tiempo real y tiempo restante), y puede alternarse a grilla horaria completa.
+
 | Opción | Tipo | Por defecto | Descripción |
 | :--- | :--- | :--- | :--- |
-| `start_hour` | `number` | `0` | Hora inicial visible en la grilla (`0`–`23`). |
-| `end_hour` | `number` | `24` | Hora final visible en la grilla (`1`–`24`). |
-| `show_agenda_summary` | `boolean` | `true` | Muestra barra superior con totales y contadores por calendario. |
+| `layout` | `'compact' \| 'grid'` | `'compact'` | Modo de visualización: widget compacto o grilla horaria. |
+| `show_week_number` | `boolean` | `true` | Muestra la píldora con el número de semana (ej. `Semana 47`). |
+| `show_progress_bar` | `boolean` | `true` | Muestra la barra de progreso animada para eventos del día. |
+| `start_hour` | `number` | `0` | Hora inicial visible (solo modo `grid`, `0`–`23`). |
+| `end_hour` | `number` | `24` | Hora final visible (solo modo `grid`, `1`–`24`). |
+| `show_agenda_summary` | `boolean` | `true` | Barra superior con totales y desglose (solo modo `grid`). |
 
 ```yaml
+# Modo widget compacto por defecto (estilizado con barra de progreso)
 type: custom:simple-calendar-day-card
-title: Agenda de Hoy
-start_hour: 6
-end_hour: 23
-show_agenda_summary: true
+layout: compact
+show_week_number: true
+show_progress_bar: true
+transparent: false
 entities:
   - entity: calendar.personal
+    name: Fer trabajo
+    color: "#ffffff"
+    icon: mdi:briefcase
   - entity: calendar.trabajo
     color: "#f4511e"
     icon: mdi:laptop
