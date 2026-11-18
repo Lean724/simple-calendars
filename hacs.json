@@ -2,5 +2,6 @@
   "name": "Simple-Calendars (Month, Week & Day)",
   "render_readme": true,
   "filename": "simple-calendars.js",
-  "content_in_root": false
+  "content_in_root": false,
+  "homeassistant": "2024.1.0"
 }

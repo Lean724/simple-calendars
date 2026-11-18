@@ -13,7 +13,7 @@ import {
   fetchMultiCalendarEvents,
   normalizeEntities,
 } from '../services/calendar-service';
-import { sharedCardStyles } from '../styles/shared-styles';
+import { computeCardSurfaceStyle, sharedCardStyles } from '../styles/shared-styles';
 import type {
   BaseCalendarCardConfig,
   CalendarEntityConfig,
@@ -22,7 +22,12 @@ import type {
   NormalizedCalendarEntity,
   SupportedLanguage,
 } from '../types';
-import { startOfDay } from '../utils/date-utils';
+import {
+  formatDayColParts,
+  formatTimeMinimal,
+  getEventProgressInfo,
+  startOfDay,
+} from '../utils/date-utils';
 import '../components/calendar-header';
 import '../components/event-dialog';
 
@@ -80,11 +85,45 @@ export abstract class BaseCalendarCard<
   @state() protected _hiddenEntities: Set<string> = new Set();
   @state() protected _selectedEvent: CalendarEvent | null = null;
   @state() protected _selectedDayDate: Date | null = null;
+  @state() protected _currentNow: Date = new Date();
 
   private _lastFetchKey = '';
   private _fetchRequestId = 0;
+  private _tickerId?: number;
 
-  public static getConfigElement(): HTMLElement {
+  public connectedCallback(): void {
+    super.connectedCallback();
+    this._currentNow = new Date();
+    this._tickerId = window.setInterval(() => {
+      this._currentNow = new Date();
+    }, 30_000);
+  }
+
+  public disconnectedCallback(): void {
+    super.disconnectedCallback();
+    if (this._tickerId !== undefined) {
+      window.clearInterval(this._tickerId);
+      this._tickerId = undefined;
+    }
+  }
+
+  public static async getConfigElement(): Promise<HTMLElement> {
+    try {
+      const win = window as unknown as {
+        loadCardHelpers?: () => Promise<{
+          createCardElement: (cfg: Record<string, unknown>) => Promise<{
+            constructor?: { getConfigElement?: () => Promise<unknown> };
+          }>;
+        }>;
+      };
+      const helpers = await win.loadCardHelpers?.();
+      if (helpers && !customElements.get('ha-selector')) {
+        const card = await helpers.createCardElement({ type: 'entities', entities: [] });
+        await card?.constructor?.getConfigElement?.();
+      }
+    } catch {
+      // Safe fallback outside Home Assistant
+    }
     return document.createElement(EDITOR_TAG);
   }
 
@@ -93,8 +132,6 @@ export abstract class BaseCalendarCard<
       throw new Error('Invalid configuration');
     }
     this._config = {
-      show_header: true,
-      show_entity_toggles: true,
       first_day_of_week: 1,
       ...config,
     };
@@ -125,6 +162,14 @@ export abstract class BaseCalendarCard<
     return typeof val === 'number' && !Number.isNaN(val) ? val : 1;
   }
 
+  protected useSharedHeader(): boolean {
+    return this._config?.show_header !== false;
+  }
+
+  protected isMinimalSurface(): boolean {
+    return false;
+  }
+
   protected abstract getFetchRange(): { start: Date; end: Date };
   protected abstract getPeriodLabel(locale: string): string;
   protected abstract navigatePrev(): void;
@@ -138,6 +183,88 @@ export abstract class BaseCalendarCard<
     lang: SupportedLanguage,
     strings: TranslationStrings,
   ): TemplateResult;
+
+  protected renderMinimalDayBlock(
+    dayDate: Date,
+    dayEvents: CalendarEvent[],
+    locale: string,
+    strings: TranslationStrings,
+    showProgressBar = true,
+  ): TemplateResult {
+    const dateParts = formatDayColParts(dayDate, locale);
+    const useEntityColor = Boolean(this._config?.use_entity_color);
+
+    return html`
+      <div class="min-day-row">
+        <div class="min-date-col">
+          <span class="min-date-day">${dateParts.weekdayDay}</span>
+          <span class="min-date-month">${dateParts.month}</span>
+        </div>
+
+        <div class="min-events-col">
+          ${dayEvents.length === 0
+            ? html`<div class="min-empty-text">${strings.noEvents}</div>`
+            : dayEvents.map((ev) => {
+                const progress = getEventProgressInfo(
+                  ev,
+                  this._currentNow,
+                  strings,
+                );
+                const timeText = ev.allDay
+                  ? strings.allDay
+                  : `${formatTimeMinimal(ev.start)} - ${formatTimeMinimal(ev.end)}`;
+                const accentStyle = useEntityColor
+                  ? `--min-ev-accent: ${ev.color};`
+                  : '';
+                const displayTitle =
+                  ev.summary && ev.summary !== '(Sin título)'
+                    ? ev.summary
+                    : ev.calendarName;
+
+                return html`
+                  <button
+                    type="button"
+                    class="min-event-item"
+                    style=${accentStyle}
+                    @click=${(e: Event) => {
+                      e.stopPropagation();
+                      this._selectedEvent = ev;
+                    }}
+                  >
+                    <div class="min-event-top">
+                      <div class="min-event-title-wrap">
+                        <ha-icon class="min-event-icon" .icon=${ev.icon}></ha-icon>
+                        <span class="min-event-title">${displayTitle}</span>
+                      </div>
+                      <span class="min-event-time">${timeText}</span>
+                    </div>
+
+                    <div class="min-event-sub">
+                      <span class="min-event-duration">${progress.label}</span>
+                      ${showProgressBar
+                        ? html`
+                            <div
+                              class="min-progress-track"
+                              role="progressbar"
+                              aria-valuenow=${Math.round(progress.progressPct)}
+                              aria-valuemin="0"
+                              aria-valuemax="100"
+                            >
+                              <div
+                                class="min-progress-fill"
+                                style="width: ${progress.progressPct}%;"
+                              ></div>
+                            </div>
+                          `
+                        : nothing}
+                    </div>
+                  </button>
+                `;
+              })}
+        </div>
+      </div>
+    `;
+  }
 
   private _triggerFetchIfNeeded(forceRefresh: boolean): void {
     if (!this.hass || !this._config) return;
@@ -247,30 +374,16 @@ export abstract class BaseCalendarCard<
     const visibleEvents = this._events.filter(
       (ev) => !this._hiddenEntities.has(ev.calendarEntity),
     );
-    const showHeader = this._config.show_header !== false;
+    const showHeader = this.useSharedHeader();
     const showToggles = this._config.show_entity_toggles !== false;
-
-    const isTransparent = Boolean(this._config.transparent);
-    const hasExplicitOpacity =
-      typeof this._config.background_opacity === 'number' &&
-      !Number.isNaN(this._config.background_opacity);
-    const bgOpacity = hasExplicitOpacity
-      ? Math.max(0, Math.min(100, this._config.background_opacity!))
-      : (isTransparent ? 0 : 100);
-
-    const hasOpacity = (hasExplicitOpacity && bgOpacity < 100) && !isTransparent;
-    const cardStyle = isTransparent
-      ? 'background: transparent !important; border-color: transparent !important; box-shadow: none !important;'
-      : hasOpacity
-        ? `--cal-card-bg: rgba(var(--rgb-card-background-color, 32, 33, 36), ${bgOpacity / 100});`
-        : '';
+    const minimal = this.isMinimalSurface();
+    const surface = computeCardSurfaceStyle(this._config);
 
     return html`
-      <ha-card
-        class="${isTransparent ? 'is-transparent' : ''} ${hasOpacity ? 'has-opacity' : ''}"
-        style="${cardStyle}"
-      >
-        <div class="loading-bar ${this._loading ? 'active' : ''}"></div>
+      <ha-card class=${surface.className} style=${surface.style}>
+        ${!minimal || this._loading
+          ? html`<div class="loading-bar ${this._loading ? 'active' : ''}"></div>`
+          : nothing}
 
         ${showHeader
           ? html`
@@ -312,7 +425,7 @@ export abstract class BaseCalendarCard<
             `
           : html`
               <div
-                class="card-content-wrap"
+                class="card-content-wrap ${minimal ? 'minimal-pad' : ''}"
                 @cal-event-click=${this._handleEventClick}
               >
                 ${this.renderCalendarBody(

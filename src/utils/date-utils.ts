@@ -287,6 +287,12 @@ export function formatTimeShort(date: Date, locale: string): string {
   }).format(date);
 }
 
+export function formatTimeMinimal(date: Date): string {
+  const hours = date.getHours();
+  const mins = String(date.getMinutes()).padStart(2, '0');
+  return `${hours}:${mins}`;
+}
+
 export function formatMonthTitle(date: Date, locale: string): string {
   const formatted = new Intl.DateTimeFormat(locale, {
     month: 'long',
@@ -378,6 +384,22 @@ export interface EventProgressInfo {
   isFuture: boolean;
 }
 
+function formatDurationUnits(
+  ms: number,
+  strings: {
+    hoursRemaining: string;
+    hourRemaining: string;
+    minutesRemaining: string;
+  },
+): string {
+  const totalMinutes = Math.max(1, Math.round(ms / 60000));
+  if (totalMinutes >= 45) {
+    const hours = Math.max(1, Math.round(totalMinutes / 60));
+    return `${hours} ${hours === 1 ? strings.hourRemaining : strings.hoursRemaining}`;
+  }
+  return `${totalMinutes} ${strings.minutesRemaining}`;
+}
+
 export function getEventProgressInfo(
   event: CalendarEvent,
   now: Date,
@@ -407,7 +429,7 @@ export function getEventProgressInfo(
     if (todayStart >= eventEndDay) {
       return {
         progressPct: 100,
-        label: strings.completed,
+        label: strings.allDay,
         isOngoing: false,
         isPast: true,
         isFuture: false,
@@ -431,16 +453,9 @@ export function getEventProgressInfo(
   const totalMs = Math.max(60000, endMs - startMs);
 
   if (nowMs < startMs) {
-    const diffMs = startMs - nowMs;
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffMins = Math.round((diffMs % 3600000) / 60000);
-    const timeText =
-      diffHours > 0
-        ? `${diffHours} ${diffHours === 1 ? strings.hourRemaining : strings.hoursRemaining}`
-        : `${Math.max(1, diffMins)} ${strings.minutesRemaining}`;
     return {
       progressPct: 0,
-      label: `${strings.startsIn} ${timeText}`,
+      label: formatDurationUnits(totalMs, strings),
       isOngoing: false,
       isPast: false,
       isFuture: true,
@@ -450,7 +465,7 @@ export function getEventProgressInfo(
   if (nowMs >= endMs) {
     return {
       progressPct: 100,
-      label: strings.completed,
+      label: formatDurationUnits(totalMs, strings),
       isOngoing: false,
       isPast: true,
       isFuture: false,
@@ -460,19 +475,10 @@ export function getEventProgressInfo(
   const elapsedMs = nowMs - startMs;
   const progressPct = Math.min(100, Math.max(0, (elapsedMs / totalMs) * 100));
   const remainingMs = endMs - nowMs;
-  const remHours = Math.floor(remainingMs / 3600000);
-  const remMins = Math.round((remainingMs % 3600000) / 60000);
-
-  let label = '';
-  if (remHours >= 1) {
-    label = `${remHours} ${remHours === 1 ? strings.hourRemaining : strings.hoursRemaining}`;
-  } else {
-    label = `${Math.max(1, remMins)} ${strings.minutesRemaining}`;
-  }
 
   return {
     progressPct,
-    label,
+    label: formatDurationUnits(remainingMs, strings),
     isOngoing: true,
     isPast: false,
     isFuture: false,

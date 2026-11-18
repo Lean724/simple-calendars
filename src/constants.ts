@@ -1,6 +1,6 @@
 import type { HomeAssistant, SupportedLanguage } from './types';
 
-export const CARD_VERSION = '1.0.0';
+export const CARD_VERSION = '1.2.0';
 
 export const MONTH_CARD_TYPE = 'simple-calendar-month-card';
 export const WEEK_CARD_TYPE = 'simple-calendar-week-card';
@@ -57,7 +57,15 @@ export interface TranslationStrings {
   editorGeneralSection: string;
   editorAppearanceSection: string;
   editorTransparent: string;
+  editorBackgroundColor: string;
   editorBackgroundOpacity: string;
+  editorBackdropBlur: string;
+  editorHideBorder: string;
+  editorHideShadow: string;
+  editorBorderRadius: string;
+  editorShowNavigation: string;
+  editorUseEntityColor: string;
+  editorShowEmptyDays: string;
   editorViewSection: string;
   editorLayout: string;
   editorLayoutCompact: string;
@@ -121,8 +129,16 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     startsIn: 'Empieza en',
     editorGeneralSection: 'Configuración general',
     editorAppearanceSection: 'Apariencia y Transparencia',
-    editorTransparent: 'Fondo transparente',
+    editorTransparent: 'Fondo 100% transparente',
+    editorBackgroundColor: 'Color de fondo (opcional)',
     editorBackgroundOpacity: 'Opacidad del fondo (%)',
+    editorBackdropBlur: 'Desenfoque de fondo (px)',
+    editorHideBorder: 'Ocultar borde',
+    editorHideShadow: 'Ocultar sombra',
+    editorBorderRadius: 'Radio de borde (px)',
+    editorShowNavigation: 'Mostrar flechas de navegación',
+    editorUseEntityColor: 'Colorear ícono y barra por calendario',
+    editorShowEmptyDays: 'Mostrar días sin eventos',
     editorViewSection: 'Opciones de vista',
     editorLayout: 'Diseño de la tarjeta',
     editorLayoutCompact: 'Widget estilizado (compacto)',
@@ -184,8 +200,16 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     startsIn: 'Starts in',
     editorGeneralSection: 'General settings',
     editorAppearanceSection: 'Appearance & Transparency',
-    editorTransparent: 'Transparent background',
+    editorTransparent: '100% Transparent background',
+    editorBackgroundColor: 'Background color (optional)',
     editorBackgroundOpacity: 'Background opacity (%)',
+    editorBackdropBlur: 'Backdrop blur (px)',
+    editorHideBorder: 'Hide border',
+    editorHideShadow: 'Hide shadow',
+    editorBorderRadius: 'Border radius (px)',
+    editorShowNavigation: 'Show navigation arrows',
+    editorUseEntityColor: 'Use calendar color on icon & bar',
+    editorShowEmptyDays: 'Show days without events',
     editorViewSection: 'View options',
     editorLayout: 'Card layout',
     editorLayoutCompact: 'Stylized widget (compact)',

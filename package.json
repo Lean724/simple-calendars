@@ -1,11 +1,11 @@
 {
   "name": "simple-calendars",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "Multi-entity Monthly, Weekly, and Daily Lovelace calendar cards for Home Assistant",
   "type": "module",
   "main": "dist/simple-calendars.js",
   "scripts": {
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && vite build && node -e \"require('fs').copyFileSync('dist/simple-calendars.js','simple-calendars.js')\"",
     "dev": "vite build --watch",
     "typecheck": "tsc --noEmit"
   },

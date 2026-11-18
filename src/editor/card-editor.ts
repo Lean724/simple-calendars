@@ -228,6 +228,15 @@ export class HaCalendarCardEditor extends LitElement {
     const kind = this._getCardKind();
     const entities = this._getEntities();
     const firstDay = this._config.first_day_of_week ?? 1;
+    const isMinimalLayout =
+      kind !== 'month' &&
+      (this._config as WeekCardConfig | DayCardConfig).layout !== 'grid';
+    const opacityValue =
+      typeof this._config.background_opacity === 'number'
+        ? this._config.background_opacity
+        : this._config.transparent
+          ? 0
+          : 100;
 
     return html`
       <div class="editor-root">
@@ -290,37 +299,55 @@ export class HaCalendarCardEditor extends LitElement {
           </div>
 
           <div class="toggles-list">
-            <label class="checkbox-row">
-              <input
-                type="checkbox"
-                .checked=${this._config.show_header !== false}
-                @change=${(e: Event) =>
-                  this._updateField(
-                    'show_header',
-                    (e.target as HTMLInputElement).checked,
-                  )}
-              />
-              <span>${strings.editorShowHeader}</span>
-            </label>
+            ${isMinimalLayout
+              ? html`
+                  <label class="checkbox-row">
+                    <input
+                      type="checkbox"
+                      .checked=${Boolean(this._config.show_navigation)}
+                      @change=${(e: Event) =>
+                        this._updateField(
+                          'show_navigation',
+                          (e.target as HTMLInputElement).checked,
+                        )}
+                    />
+                    <span>${strings.editorShowNavigation}</span>
+                  </label>
+                `
+              : html`
+                  <label class="checkbox-row">
+                    <input
+                      type="checkbox"
+                      .checked=${this._config.show_header !== false}
+                      @change=${(e: Event) =>
+                        this._updateField(
+                          'show_header',
+                          (e.target as HTMLInputElement).checked,
+                        )}
+                    />
+                    <span>${strings.editorShowHeader}</span>
+                  </label>
 
-            <label class="checkbox-row">
-              <input
-                type="checkbox"
-                .checked=${this._config.show_entity_toggles !== false}
-                @change=${(e: Event) =>
-                  this._updateField(
-                    'show_entity_toggles',
-                    (e.target as HTMLInputElement).checked,
-                  )}
-              />
-              <span>${strings.editorShowToggles}</span>
-            </label>
+                  <label class="checkbox-row">
+                    <input
+                      type="checkbox"
+                      .checked=${this._config.show_entity_toggles !== false}
+                      @change=${(e: Event) =>
+                        this._updateField(
+                          'show_entity_toggles',
+                          (e.target as HTMLInputElement).checked,
+                        )}
+                    />
+                    <span>${strings.editorShowToggles}</span>
+                  </label>
+                `}
           </div>
         </div>
 
         <!-- Appearance & Transparency Section -->
         <div class="section">
           <div class="section-title">${strings.editorAppearanceSection}</div>
+
           <div class="toggles-list">
             <label class="checkbox-row">
               <input
@@ -334,25 +361,110 @@ export class HaCalendarCardEditor extends LitElement {
               />
               <span>${strings.editorTransparent}</span>
             </label>
+
+            <label class="checkbox-row">
+              <input
+                type="checkbox"
+                .checked=${Boolean(this._config.use_entity_color)}
+                @change=${(e: Event) =>
+                  this._updateField(
+                    'use_entity_color',
+                    (e.target as HTMLInputElement).checked,
+                  )}
+              />
+              <span>${strings.editorUseEntityColor}</span>
+            </label>
           </div>
 
-          <div class="field">
-            <label>${strings.editorBackgroundOpacity}</label>
-            <input
-              type="number"
-              min="0"
-              max="100"
-              .value=${String(
-                typeof this._config.background_opacity === 'number'
-                  ? this._config.background_opacity
-                  : (this._config.transparent ? 0 : 100),
-              )}
-              @change=${(e: Event) =>
-                this._updateField(
-                  'background_opacity',
-                  Math.max(0, Math.min(100, Number((e.target as HTMLInputElement).value) || 0)),
-                )}
-            />
+          <div class="two-col">
+            <div class="field">
+              <label>${strings.editorBackgroundOpacity}: ${opacityValue}%</label>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                .value=${String(opacityValue)}
+                @input=${(e: Event) =>
+                  this._updateField(
+                    'background_opacity',
+                    Math.max(0, Math.min(100, Number((e.target as HTMLInputElement).value) || 0)),
+                  )}
+              />
+            </div>
+
+            <div class="field">
+              <label>${strings.editorBackdropBlur}</label>
+              <input
+                type="number"
+                min="0"
+                max="40"
+                .value=${String(this._config.backdrop_blur ?? 0)}
+                @change=${(e: Event) =>
+                  this._updateField(
+                    'backdrop_blur',
+                    Math.max(0, Math.min(40, Number((e.target as HTMLInputElement).value) || 0)),
+                  )}
+              />
+            </div>
+          </div>
+
+          <div class="two-col">
+            <div class="field">
+              <label>${strings.editorBackgroundColor}</label>
+              <input
+                type="text"
+                .value=${this._config.background_color || ''}
+                placeholder="#1c1d21"
+                @change=${(e: Event) =>
+                  this._updateField(
+                    'background_color',
+                    (e.target as HTMLInputElement).value.trim(),
+                  )}
+              />
+            </div>
+
+            <div class="field">
+              <label>${strings.editorBorderRadius}</label>
+              <input
+                type="number"
+                min="0"
+                max="48"
+                .value=${String(this._config.border_radius ?? 24)}
+                @change=${(e: Event) =>
+                  this._updateField(
+                    'border_radius',
+                    Math.max(0, Math.min(48, Number((e.target as HTMLInputElement).value) || 0)),
+                  )}
+              />
+            </div>
+          </div>
+
+          <div class="two-col">
+            <label class="checkbox-row">
+              <input
+                type="checkbox"
+                .checked=${Boolean(this._config.hide_border)}
+                @change=${(e: Event) =>
+                  this._updateField(
+                    'hide_border',
+                    (e.target as HTMLInputElement).checked,
+                  )}
+              />
+              <span>${strings.editorHideBorder}</span>
+            </label>
+
+            <label class="checkbox-row">
+              <input
+                type="checkbox"
+                .checked=${Boolean(this._config.hide_shadow)}
+                @change=${(e: Event) =>
+                  this._updateField(
+                    'hide_shadow',
+                    (e.target as HTMLInputElement).checked,
+                  )}
+              />
+              <span>${strings.editorHideShadow}</span>
+            </label>
           </div>
         </div>
 
@@ -519,7 +631,7 @@ export class HaCalendarCardEditor extends LitElement {
         <label class="checkbox-row">
           <input
             type="checkbox"
-            .checked=${Boolean(cfg.compact)}
+            .checked=${cfg.compact !== false}
             @change=${(e: Event) =>
               this._updateField(
                 'compact',
@@ -536,36 +648,29 @@ export class HaCalendarCardEditor extends LitElement {
     cfg: WeekCardConfig,
     strings: (typeof TRANSLATIONS)['es'],
   ) {
+    const isCompact = cfg.layout !== 'grid';
+
     return html`
-      <div class="three-col">
+      <div class="two-col">
         <div class="field">
-          <label>${strings.editorStartHour}</label>
-          <input
-            type="number"
-            min="0"
-            max="23"
-            .value=${String(cfg.start_hour ?? 0)}
+          <label>${strings.editorLayout}</label>
+          <select
+            .value=${cfg.layout || 'compact'}
             @change=${(e: Event) =>
               this._updateField(
-                'start_hour',
-                Math.max(0, Math.min(23, Number((e.target as HTMLInputElement).value) || 0)),
+                'layout',
+                (e.target as HTMLSelectElement).value,
               )}
-          />
+          >
+            <option value="compact" ?selected=${isCompact}>
+              ${strings.editorLayoutCompact}
+            </option>
+            <option value="grid" ?selected=${cfg.layout === 'grid'}>
+              ${strings.editorLayoutGrid}
+            </option>
+          </select>
         </div>
-        <div class="field">
-          <label>${strings.editorEndHour}</label>
-          <input
-            type="number"
-            min="1"
-            max="24"
-            .value=${String(cfg.end_hour ?? 24)}
-            @change=${(e: Event) =>
-              this._updateField(
-                'end_hour',
-                Math.max(1, Math.min(24, Number((e.target as HTMLInputElement).value) || 24)),
-              )}
-          />
-        </div>
+
         <div class="field">
           <label>${strings.editorDaysToShow}</label>
           <input
@@ -581,6 +686,82 @@ export class HaCalendarCardEditor extends LitElement {
           />
         </div>
       </div>
+
+      ${isCompact
+        ? html`
+            <div class="toggles-list">
+              <label class="checkbox-row">
+                <input
+                  type="checkbox"
+                  .checked=${cfg.show_week_number !== false}
+                  @change=${(e: Event) =>
+                    this._updateField(
+                      'show_week_number',
+                      (e.target as HTMLInputElement).checked,
+                    )}
+                />
+                <span>${strings.editorShowWeekNumber}</span>
+              </label>
+
+              <label class="checkbox-row">
+                <input
+                  type="checkbox"
+                  .checked=${cfg.show_progress_bar !== false}
+                  @change=${(e: Event) =>
+                    this._updateField(
+                      'show_progress_bar',
+                      (e.target as HTMLInputElement).checked,
+                    )}
+                />
+                <span>${strings.editorShowProgressBar}</span>
+              </label>
+
+              <label class="checkbox-row">
+                <input
+                  type="checkbox"
+                  .checked=${Boolean(cfg.show_empty_days)}
+                  @change=${(e: Event) =>
+                    this._updateField(
+                      'show_empty_days',
+                      (e.target as HTMLInputElement).checked,
+                    )}
+                />
+                <span>${strings.editorShowEmptyDays}</span>
+              </label>
+            </div>
+          `
+        : html`
+            <div class="two-col">
+              <div class="field">
+                <label>${strings.editorStartHour}</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="23"
+                  .value=${String(cfg.start_hour ?? 0)}
+                  @change=${(e: Event) =>
+                    this._updateField(
+                      'start_hour',
+                      Math.max(0, Math.min(23, Number((e.target as HTMLInputElement).value) || 0)),
+                    )}
+                />
+              </div>
+              <div class="field">
+                <label>${strings.editorEndHour}</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="24"
+                  .value=${String(cfg.end_hour ?? 24)}
+                  @change=${(e: Event) =>
+                    this._updateField(
+                      'end_hour',
+                      Math.max(1, Math.min(24, Number((e.target as HTMLInputElement).value) || 24)),
+                    )}
+                />
+              </div>
+            </div>
+          `}
     `;
   }
 
@@ -750,6 +931,13 @@ export class HaCalendarCardEditor extends LitElement {
       color: var(--primary-text-color, #212121);
       font-family: inherit;
       font-size: 0.88rem;
+    }
+
+    input[type='range'] {
+      width: 100%;
+      margin: 6px 0;
+      accent-color: var(--primary-color, #1a73e8);
+      cursor: pointer;
     }
 
     .two-col {

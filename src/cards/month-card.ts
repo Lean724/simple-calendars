@@ -1,5 +1,5 @@
 import { css, html, nothing } from 'lit';
-import { customElement } from 'lit/decorators.js';
+import { customElement, state } from 'lit/decorators.js';
 import {
   MONTH_CARD_TYPE,
   type TranslationStrings,
@@ -17,15 +17,19 @@ import {
   addMonths,
   endOfDay,
   formatMonthTitle,
-  formatTimeShort,
+  formatTimeMinimal,
   getEventsForDay,
   getMonthGridDays,
   getWeekdayLabels,
+  isSameDay,
+  startOfDay,
 } from '../utils/date-utils';
 import { BaseCalendarCard, buildStubEntities } from './base-card';
 
 @customElement(MONTH_CARD_TYPE)
 export class HaCalendarMonthCard extends BaseCalendarCard<MonthCardConfig> {
+  @state() private _focusedDay: Date = startOfDay(new Date());
+
   public static getStubConfig(hass?: HomeAssistant): MonthCardConfig {
     return {
       type: `custom:${MONTH_CARD_TYPE}`,
@@ -33,22 +37,23 @@ export class HaCalendarMonthCard extends BaseCalendarCard<MonthCardConfig> {
       first_day_of_week: 1,
       max_events_per_day: 3,
       show_header: true,
-      show_entity_toggles: true,
+      show_entity_toggles: false,
       show_week_numbers: false,
-      compact: false,
+      compact: true,
+      transparent: false,
+      background_opacity: 100,
     };
   }
 
   public getCardSize(): number {
-    return 7;
+    return 5;
   }
 
   public getGridOptions() {
     return {
       columns: 12,
       min_columns: 6,
-      rows: 7,
-      min_rows: 5,
+      min_rows: 4,
     };
   }
 
@@ -66,15 +71,26 @@ export class HaCalendarMonthCard extends BaseCalendarCard<MonthCardConfig> {
 
   protected navigatePrev(): void {
     this._anchorDate = addMonths(this._anchorDate, -1);
+    this._focusedDay = new Date(
+      this._anchorDate.getFullYear(),
+      this._anchorDate.getMonth(),
+      1,
+    );
   }
 
   protected navigateNext(): void {
     this._anchorDate = addMonths(this._anchorDate, 1);
+    this._focusedDay = new Date(
+      this._anchorDate.getFullYear(),
+      this._anchorDate.getMonth(),
+      1,
+    );
   }
 
   protected navigateToday(): void {
     const now = new Date();
     this._anchorDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+    this._focusedDay = startOfDay(now);
   }
 
   private _getGridDays(): MonthGridDay[] {
@@ -103,7 +119,7 @@ export class HaCalendarMonthCard extends BaseCalendarCard<MonthCardConfig> {
     strings: TranslationStrings,
   ) {
     const showWeekNumbers = Boolean(this._config.show_week_numbers);
-    const compact = Boolean(this._config.compact);
+    const compact = this._config.compact !== false;
     const maxEvents = Math.max(1, this._config.max_events_per_day ?? 3);
 
     const weekdays = getWeekdayLabels(this.getFirstDayOfWeek(), locale);
@@ -114,9 +130,10 @@ export class HaCalendarMonthCard extends BaseCalendarCard<MonthCardConfig> {
       weeks.push(gridDays.slice(i, i + 7));
     }
 
+    const focusedDayEvents = getEventsForDay(visibleEvents, this._focusedDay);
+
     return html`
       <div class="month-grid-wrap ${compact ? 'is-compact' : ''}">
-        <!-- Weekday Headers -->
         <div
           class="weekday-row ${showWeekNumbers ? 'with-weeks' : ''}"
           role="row"
@@ -129,7 +146,6 @@ export class HaCalendarMonthCard extends BaseCalendarCard<MonthCardConfig> {
           )}
         </div>
 
-        <!-- Month Grid Weeks -->
         <div class="weeks-container">
           ${weeks.map(
             (week) => html`
@@ -141,14 +157,13 @@ export class HaCalendarMonthCard extends BaseCalendarCard<MonthCardConfig> {
                   const dayEvents = getEventsForDay(visibleEvents, day.date);
                   const visibleDayEvents = dayEvents.slice(0, maxEvents);
                   const hiddenCount = dayEvents.length - visibleDayEvents.length;
+                  const isFocused = isSameDay(day.date, this._focusedDay);
 
                   return html`
                     <div
-                      class="day-cell ${day.isCurrentMonth ? '' : 'outside-month'} ${day.isToday ? 'is-today' : ''}"
+                      class="day-cell ${day.isCurrentMonth ? '' : 'outside-month'} ${day.isToday ? 'is-today' : ''} ${isFocused ? 'is-focused' : ''}"
                       @click=${() => {
-                        if (dayEvents.length > 0) {
-                          this._openDayList(day.date);
-                        }
+                        this._focusedDay = day.date;
                       }}
                     >
                       <div class="day-cell-top">
@@ -180,12 +195,12 @@ export class HaCalendarMonthCard extends BaseCalendarCard<MonthCardConfig> {
                                     ev.color,
                                     0.14,
                                   )};"
-                                  title=${`${formatTimeShort(ev.start, locale)} ${ev.summary} (${ev.calendarName})`}
+                                  title=${`${formatTimeMinimal(ev.start)} ${ev.summary} (${ev.calendarName})`}
                                   @click=${(e: Event) => this._onEventPillClick(e, ev)}
                                 >
                                   <span class="pill-dot"></span>
                                   <span class="pill-time">
-                                    ${formatTimeShort(ev.start, locale)}
+                                    ${formatTimeMinimal(ev.start)}
                                   </span>
                                   <span class="pill-text">${ev.summary}</span>
                                 </button>
@@ -215,6 +230,20 @@ export class HaCalendarMonthCard extends BaseCalendarCard<MonthCardConfig> {
           )}
         </div>
       </div>
+
+      ${focusedDayEvents.length > 0
+        ? html`
+            <div class="month-focused-summary">
+              ${this.renderMinimalDayBlock(
+                this._focusedDay,
+                focusedDayEvents,
+                locale,
+                strings,
+                true,
+              )}
+            </div>
+          `
+        : nothing}
     `;
   }
 
@@ -222,10 +251,10 @@ export class HaCalendarMonthCard extends BaseCalendarCard<MonthCardConfig> {
     sharedCardStyles,
     css`
       .month-grid-wrap {
-        border: 1px solid var(--cal-border-color);
-        border-radius: 10px;
+        border: 1px solid color-mix(in srgb, var(--cal-text-primary) 14%, transparent);
+        border-radius: 14px;
         overflow: hidden;
-        background: var(--cal-surface);
+        background: transparent;
       }
 
       .weekday-row,
@@ -236,19 +265,19 @@ export class HaCalendarMonthCard extends BaseCalendarCard<MonthCardConfig> {
 
       .weekday-row.with-weeks,
       .week-row.with-weeks {
-        grid-template-columns: 34px repeat(7, minmax(0, 1fr));
+        grid-template-columns: 32px repeat(7, minmax(0, 1fr));
       }
 
       .weekday-row {
         background: var(--cal-surface-alt);
-        border-bottom: 1px solid var(--cal-border-color);
+        border-bottom: 1px solid color-mix(in srgb, var(--cal-text-primary) 12%, transparent);
       }
 
       .week-col-header,
       .weekday-cell {
-        padding: 8px 4px;
+        padding: 7px 4px;
         text-align: center;
-        font-size: 0.74rem;
+        font-size: 0.72rem;
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.03em;
@@ -256,7 +285,7 @@ export class HaCalendarMonthCard extends BaseCalendarCard<MonthCardConfig> {
       }
 
       .week-row {
-        border-bottom: 1px solid var(--cal-border-color);
+        border-bottom: 1px solid color-mix(in srgb, var(--cal-text-primary) 10%, transparent);
       }
 
       .week-row:last-child {
@@ -267,28 +296,28 @@ export class HaCalendarMonthCard extends BaseCalendarCard<MonthCardConfig> {
         display: flex;
         align-items: flex-start;
         justify-content: center;
-        padding-top: 8px;
-        font-size: 0.7rem;
+        padding-top: 7px;
+        font-size: 0.68rem;
         font-weight: 600;
         color: var(--cal-text-secondary);
         background: var(--cal-surface-alt);
-        border-right: 1px solid var(--cal-border-color);
+        border-right: 1px solid color-mix(in srgb, var(--cal-text-primary) 10%, transparent);
       }
 
       .day-cell {
-        min-height: 98px;
+        min-height: 82px;
         padding: 4px;
-        border-right: 1px solid var(--cal-border-color);
+        border-right: 1px solid color-mix(in srgb, var(--cal-text-primary) 10%, transparent);
         display: flex;
         flex-direction: column;
         gap: 3px;
         min-width: 0;
-        cursor: default;
+        cursor: pointer;
         transition: background-color 0.12s ease;
       }
 
       .month-grid-wrap.is-compact .day-cell {
-        min-height: 70px;
+        min-height: 64px;
         padding: 3px;
       }
 
@@ -301,11 +330,15 @@ export class HaCalendarMonthCard extends BaseCalendarCard<MonthCardConfig> {
       }
 
       .day-cell.outside-month {
-        opacity: 0.52;
+        opacity: 0.45;
       }
 
       .day-cell.is-today {
-        background: rgba(26, 115, 232, 0.05);
+        background: rgba(26, 115, 232, 0.08);
+      }
+
+      .day-cell.is-focused {
+        box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--cal-accent) 60%, transparent);
       }
 
       .day-cell-top {
@@ -315,13 +348,13 @@ export class HaCalendarMonthCard extends BaseCalendarCard<MonthCardConfig> {
       }
 
       .day-num {
-        width: 24px;
-        height: 24px;
+        width: 22px;
+        height: 22px;
         border-radius: 50%;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        font-size: 0.8rem;
+        font-size: 0.78rem;
         font-weight: 600;
         color: var(--cal-text-primary);
       }
@@ -345,11 +378,11 @@ export class HaCalendarMonthCard extends BaseCalendarCard<MonthCardConfig> {
         display: flex;
         align-items: center;
         gap: 4px;
-        padding: 2px 5px;
+        padding: 2px 4px;
         border-radius: 4px;
         font-family: inherit;
-        font-size: 0.73rem;
-        line-height: 1.3;
+        font-size: 0.71rem;
+        line-height: 1.25;
         text-align: left;
         cursor: pointer;
         min-width: 0;
@@ -373,20 +406,20 @@ export class HaCalendarMonthCard extends BaseCalendarCard<MonthCardConfig> {
       }
 
       .pill-icon {
-        --mdc-icon-size: 12px;
+        --mdc-icon-size: 11px;
         flex-shrink: 0;
       }
 
       .pill-dot {
-        width: 6px;
-        height: 6px;
+        width: 5px;
+        height: 5px;
         border-radius: 50%;
         background: var(--ev-color);
         flex-shrink: 0;
       }
 
       .pill-time {
-        font-size: 0.68rem;
+        font-size: 0.66rem;
         font-weight: 600;
         color: var(--cal-text-secondary);
         flex-shrink: 0;
@@ -405,7 +438,7 @@ export class HaCalendarMonthCard extends BaseCalendarCard<MonthCardConfig> {
         background: transparent;
         color: var(--cal-accent);
         font-family: inherit;
-        font-size: 0.71rem;
+        font-size: 0.69rem;
         font-weight: 600;
         text-align: left;
         padding: 1px 4px;
@@ -417,9 +450,18 @@ export class HaCalendarMonthCard extends BaseCalendarCard<MonthCardConfig> {
         background: var(--cal-surface-alt);
       }
 
+      .month-focused-summary {
+        margin-top: 4px;
+        padding: 10px 12px;
+        border-radius: 14px;
+        background: var(--cal-surface-alt);
+        border: 1px solid color-mix(in srgb, var(--cal-text-primary) 10%, transparent);
+      }
+
       @media (max-width: 560px) {
-        .day-cell {
-          min-height: 76px;
+        .day-cell,
+        .month-grid-wrap.is-compact .day-cell {
+          min-height: 56px;
           padding: 2px;
         }
 
@@ -428,8 +470,8 @@ export class HaCalendarMonthCard extends BaseCalendarCard<MonthCardConfig> {
         }
 
         .event-pill {
-          padding: 2px 3px;
-          font-size: 0.68rem;
+          padding: 1px 3px;
+          font-size: 0.66rem;
         }
       }
     `,
