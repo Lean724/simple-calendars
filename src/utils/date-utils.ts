@@ -1,0 +1,371 @@
+import type { CalendarEvent, EventLayoutItem, MonthGridDay, SupportedLanguage } from '../types';
+
+export function startOfDay(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
+}
+
+export function endOfDay(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1, 0, 0, 0, 0);
+}
+
+export function addDays(date: Date, days: number): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days, 0, 0, 0, 0);
+}
+
+export function addMonths(date: Date, months: number): Date {
+  return new Date(date.getFullYear(), date.getMonth() + months, 1, 0, 0, 0, 0);
+}
+
+export function isSameDay(a: Date, b: Date): boolean {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
+/**
+ * Parses a YYYY-MM-DD string into local midnight without UTC offset issues.
+ */
+export function parseLocalDateOnly(dateStr: string): Date {
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(dateStr);
+  if (!match) {
+    return new Date(dateStr);
+  }
+  const year = Number(match[1]);
+  const month = Number(match[2]) - 1;
+  const day = Number(match[3]);
+  return new Date(year, month, day, 0, 0, 0, 0);
+}
+
+export function getISOWeekNumber(date: Date): number {
+  const utc = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = utc.getUTCDay() || 7;
+  utc.setUTCDate(utc.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(utc.getUTCFullYear(), 0, 1));
+  return Math.ceil(((utc.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+}
+
+export function getMonthGridDays(
+  year: number,
+  month: number,
+  firstDayOfWeek: number,
+): MonthGridDay[] {
+  const normalizedFirstDay = ((firstDayOfWeek % 7) + 7) % 7;
+  const firstOfMonth = new Date(year, month, 1, 0, 0, 0, 0);
+  const lastOfMonth = new Date(year, month + 1, 0, 0, 0, 0, 0);
+
+  const startOffset = (firstOfMonth.getDay() - normalizedFirstDay + 7) % 7;
+  const gridStart = addDays(firstOfMonth, -startOffset);
+
+  const endOffset = (normalizedFirstDay + 6 - lastOfMonth.getDay() + 7) % 7;
+  const totalDays = startOffset + lastOfMonth.getDate() + endOffset;
+  const today = startOfDay(new Date());
+
+  const days: MonthGridDay[] = [];
+  for (let i = 0; i < totalDays; i++) {
+    const date = addDays(gridStart, i);
+    days.push({
+      date,
+      isCurrentMonth: date.getMonth() === month && date.getFullYear() === year,
+      isToday: isSameDay(date, today),
+      weekNumber: getISOWeekNumber(date),
+    });
+  }
+  return days;
+}
+
+export function getWeekStart(anchorDate: Date, firstDayOfWeek: number): Date {
+  const normalizedFirstDay = ((firstDayOfWeek % 7) + 7) % 7;
+  const day = startOfDay(anchorDate);
+  const offset = (day.getDay() - normalizedFirstDay + 7) % 7;
+  return addDays(day, -offset);
+}
+
+export function getWeekDays(
+  anchorDate: Date,
+  firstDayOfWeek: number,
+  daysCount = 7,
+): Date[] {
+  const start = daysCount === 7 ? getWeekStart(anchorDate, firstDayOfWeek) : startOfDay(anchorDate);
+  const result: Date[] = [];
+  for (let i = 0; i < daysCount; i++) {
+    result.push(addDays(start, i));
+  }
+  return result;
+}
+
+export function getWeekdayLabels(firstDayOfWeek: number, locale: string): string[] {
+  const normalizedFirstDay = ((firstDayOfWeek % 7) + 7) % 7;
+  // 2026-11-01 is a Sunday
+  const baseSunday = new Date(2026, 10, 1);
+  const formatter = new Intl.DateTimeFormat(locale, { weekday: 'short' });
+  const labels: string[] = [];
+  for (let i = 0; i < 7; i++) {
+    const dayIndex = (normalizedFirstDay + i) % 7;
+    const d = addDays(baseSunday, dayIndex);
+    labels.push(capitalizeFirst(formatter.format(d).replace(/\.$/, '')));
+  }
+  return labels;
+}
+
+export function eventOccursOnDay(
+  event: CalendarEvent,
+  dayStart: Date,
+  dayEnd: Date,
+): boolean {
+  const startMs = event.start.getTime();
+  const endMs = event.end.getTime();
+  const dayStartMs = dayStart.getTime();
+  const dayEndMs = dayEnd.getTime();
+
+  if (endMs <= startMs) {
+    return startMs >= dayStartMs && startMs < dayEndMs;
+  }
+  return startMs < dayEndMs && endMs > dayStartMs;
+}
+
+export function getEventsForDay(events: CalendarEvent[], date: Date): CalendarEvent[] {
+  const dayStart = startOfDay(date);
+  const dayEnd = endOfDay(date);
+  return events
+    .filter((ev) => eventOccursOnDay(ev, dayStart, dayEnd))
+    .sort((a, b) => {
+      if (a.allDay !== b.allDay) {
+        return a.allDay ? -1 : 1;
+      }
+      return a.start.getTime() - b.start.getTime();
+    });
+}
+
+interface InternalLayoutEntry {
+  event: CalendarEvent;
+  startMin: number;
+  endMin: number;
+  visualEndMin: number;
+  col: number;
+  colSpan: number;
+}
+
+/**
+ * Computes Google-Calendar-style parallel columns for overlapping timed events on a single day.
+ */
+export function layoutOverlappingEvents(
+  events: CalendarEvent[],
+  dayDate: Date,
+  startHour: number,
+  endHour: number,
+): EventLayoutItem[] {
+  const totalMinutes = Math.max(60, (endHour - startHour) * 60);
+  const dayBase = startOfDay(dayDate).getTime();
+  const windowStartMs = dayBase + startHour * 3600000;
+  const windowEndMs = dayBase + endHour * 3600000;
+  const minVisualMinutes = 25;
+
+  const timed = events
+    .filter((ev) => !ev.allDay)
+    .map((ev) => {
+      const rawStart = ev.start.getTime();
+      const rawEnd = Math.max(ev.end.getTime(), rawStart);
+      if (rawEnd <= windowStartMs || rawStart >= windowEndMs) {
+        return null;
+      }
+      const clampedStart = Math.max(rawStart, windowStartMs);
+      const clampedEnd = Math.min(rawEnd, windowEndMs);
+      const startMin = (clampedStart - windowStartMs) / 60000;
+      const endMin = Math.max(startMin + 1, (clampedEnd - windowStartMs) / 60000);
+      const visualEndMin = Math.min(totalMinutes, Math.max(endMin, startMin + minVisualMinutes));
+      return {
+        event: ev,
+        startMin,
+        endMin,
+        visualEndMin,
+        col: 0,
+        colSpan: 1,
+      } satisfies InternalLayoutEntry;
+    })
+    .filter((item): item is InternalLayoutEntry => item !== null)
+    .sort((a, b) => {
+      if (a.startMin !== b.startMin) return a.startMin - b.startMin;
+      return b.visualEndMin - a.visualEndMin;
+    });
+
+  if (timed.length === 0) return [];
+
+  // Partition into connected overlap clusters
+  const clusters: InternalLayoutEntry[][] = [];
+  let currentCluster: InternalLayoutEntry[] = [];
+  let clusterEnd = -1;
+
+  for (const item of timed) {
+    if (currentCluster.length === 0 || item.startMin < clusterEnd) {
+      currentCluster.push(item);
+      clusterEnd = Math.max(clusterEnd, item.visualEndMin);
+    } else {
+      clusters.push(currentCluster);
+      currentCluster = [item];
+      clusterEnd = item.visualEndMin;
+    }
+  }
+  if (currentCluster.length > 0) {
+    clusters.push(currentCluster);
+  }
+
+  const output: EventLayoutItem[] = [];
+
+  for (const cluster of clusters) {
+    const columnEndTimes: number[] = [];
+
+    for (const item of cluster) {
+      let assignedCol = -1;
+      for (let c = 0; c < columnEndTimes.length; c++) {
+        if (columnEndTimes[c] <= item.startMin) {
+          assignedCol = c;
+          break;
+        }
+      }
+      if (assignedCol === -1) {
+        assignedCol = columnEndTimes.length;
+        columnEndTimes.push(item.visualEndMin);
+      } else {
+        columnEndTimes[assignedCol] = item.visualEndMin;
+      }
+      item.col = assignedCol;
+    }
+
+    const numCols = Math.max(1, columnEndTimes.length);
+
+    // Expand each item horizontally if adjacent right columns are free during its interval
+    for (const item of cluster) {
+      let span = 1;
+      while (item.col + span < numCols) {
+        const targetCol = item.col + span;
+        const collides = cluster.some(
+          (other) =>
+            other !== item &&
+            other.col === targetCol &&
+            other.startMin < item.visualEndMin &&
+            other.visualEndMin > item.startMin,
+        );
+        if (collides) break;
+        span++;
+      }
+      item.colSpan = span;
+
+      const top = (item.startMin / totalMinutes) * 100;
+      const height = ((item.visualEndMin - item.startMin) / totalMinutes) * 100;
+      const left = (item.col / numCols) * 100;
+      const width = (item.colSpan / numCols) * 100;
+
+      output.push({
+        event: item.event,
+        top,
+        height: Math.max(height, 1.5),
+        left,
+        width,
+      });
+    }
+  }
+
+  return output;
+}
+
+export function formatHourLabel(hour: number, locale: string): string {
+  const d = new Date(2026, 0, 1, hour % 24, 0, 0, 0);
+  return new Intl.DateTimeFormat(locale, {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(d);
+}
+
+export function formatTimeShort(date: Date, locale: string): string {
+  return new Intl.DateTimeFormat(locale, {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(date);
+}
+
+export function formatMonthTitle(date: Date, locale: string): string {
+  const formatted = new Intl.DateTimeFormat(locale, {
+    month: 'long',
+    year: 'numeric',
+  }).format(date);
+  return capitalizeFirst(formatted);
+}
+
+export function formatWeekRangeTitle(days: Date[], locale: string): string {
+  if (days.length === 0) return '';
+  const first = days[0];
+  const last = days[days.length - 1];
+  const sameMonth = first.getMonth() === last.getMonth() && first.getFullYear() === last.getFullYear();
+  const sameYear = first.getFullYear() === last.getFullYear();
+
+  if (sameMonth) {
+    const monthYear = capitalizeFirst(
+      new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }).format(first),
+    );
+    return `${first.getDate()} – ${last.getDate()} ${monthYear}`;
+  }
+  if (sameYear) {
+    const fStr = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short' }).format(first);
+    const lStr = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' }).format(last);
+    return `${fStr} – ${lStr}`;
+  }
+  const fStr = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' }).format(first);
+  const lStr = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' }).format(last);
+  return `${fStr} – ${lStr}`;
+}
+
+export function formatDayTitle(date: Date, locale: string): string {
+  const formatted = new Intl.DateTimeFormat(locale, {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(date);
+  return capitalizeFirst(formatted);
+}
+
+export function formatEventTimeRange(
+  event: CalendarEvent,
+  locale: string,
+  lang: SupportedLanguage,
+  allDayLabel: string,
+): string {
+  if (event.allDay) {
+    const startDay = startOfDay(event.start);
+    const inclusiveEnd = addDays(startOfDay(event.end), -1);
+    const dateFmt = new Intl.DateTimeFormat(locale, {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+    if (inclusiveEnd.getTime() > startDay.getTime()) {
+      return `${dateFmt.format(startDay)} – ${dateFmt.format(inclusiveEnd)} (${allDayLabel})`;
+    }
+    return `${dateFmt.format(startDay)} · ${allDayLabel}`;
+  }
+
+  const sameDay = isSameDay(event.start, event.end);
+  const dateFmt = new Intl.DateTimeFormat(locale, {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  });
+  const startTime = formatTimeShort(event.start, locale);
+  const endTime = formatTimeShort(event.end, locale);
+
+  if (sameDay) {
+    return `${capitalizeFirst(dateFmt.format(event.start))}, ${startTime} – ${endTime}`;
+  }
+  const connector = lang === 'es' ? 'a' : 'to';
+  return `${capitalizeFirst(dateFmt.format(event.start))} ${startTime} ${connector} ${capitalizeFirst(dateFmt.format(event.end))} ${endTime}`;
+}
+
+export function capitalizeFirst(text: string): string {
+  if (!text) return text;
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
