@@ -1,6 +1,6 @@
 # Simple-Calendars (Month, Week, Day & Event)
 
-Suite de **4 tarjetas personalizadas de Lovelace para Home Assistant** con diseño **minimalista**, control avanzado de **transparencias**, soporte **multi-entidad** nativo (`calendar.*`), traducciones en **7 idiomas** y editor visual completo.
+Suite de **4 Home Assistant calendar cards para Lovelace**: calendario mensual, semanal, diario y tarjeta de eventos. Ofrece diseño minimalista, soporte nativo para múltiples entidades `calendar.*`, transparencias, traducciones en 7 idiomas y editor visual completo.
 
 ![Simple-Calendars Daily Minimalist Card Preview](docs/preview-day.svg)
 
