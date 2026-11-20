@@ -12,6 +12,7 @@ export class HaCalendarSharedHeader extends LitElement {
   @property({ attribute: false }) public hiddenEntities: Set<string> = new Set();
   @property({ type: Boolean }) public showEntityToggles = true;
   @property({ type: Boolean }) public loading = false;
+  @property({ type: Boolean }) public compact = false;
   @property({ attribute: false }) public strings!: TranslationStrings;
 
   private _emit(eventName: string, detail?: unknown): void {
@@ -26,7 +27,7 @@ export class HaCalendarSharedHeader extends LitElement {
 
   protected render() {
     return html`
-      <div class="header-root">
+      <div class="header-root ${this.compact ? 'is-compact' : ''}">
         <div class="header-top">
           <div class="title-group">
             ${this.cardTitle
@@ -116,6 +117,34 @@ export class HaCalendarSharedHeader extends LitElement {
       flex-direction: column;
       gap: 10px;
       padding: 14px 14px 10px;
+    }
+
+    .header-root.is-compact {
+      padding: 8px 12px 6px;
+      gap: 6px;
+    }
+
+    .header-root.is-compact .period-title {
+      font-size: 0.96rem;
+    }
+
+    .header-root.is-compact .card-subtitle {
+      font-size: 0.7rem;
+    }
+
+    .header-root.is-compact .icon-btn,
+    .header-root.is-compact .today-btn {
+      height: 26px;
+    }
+
+    .header-root.is-compact .icon-btn {
+      width: 26px;
+      --mdc-icon-size: 16px;
+    }
+
+    .header-root.is-compact .today-btn {
+      padding: 0 8px;
+      font-size: 0.74rem;
     }
 
     .header-top {

@@ -113,6 +113,8 @@ export function computeCardSurfaceStyle(
 export const sharedCardStyles = css`
   :host {
     display: block;
+    height: 100%;
+    box-sizing: border-box;
     --cal-border-color: var(--divider-color, rgba(127, 127, 127, 0.22));
     --cal-surface: var(--ha-card-background, var(--card-background-color, #ffffff));
     --cal-surface-alt: var(--secondary-background-color, rgba(127, 127, 127, 0.06));
@@ -127,6 +129,8 @@ export const sharedCardStyles = css`
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    height: 100%;
+    box-sizing: border-box;
     background: var(--cal-surface);
     color: var(--cal-text-primary);
     border-radius: var(--ha-card-border-radius, 24px);
@@ -143,6 +147,10 @@ export const sharedCardStyles = css`
     padding: 0 12px 12px;
     display: flex;
     flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: thin;
     gap: 8px;
   }
 
@@ -363,14 +371,14 @@ export const sharedCardStyles = css`
     opacity: 0.78;
   }
 
-  .min-event-item.is-past .min-event-title {
+  .min-event-item.is-past .min-event-title,
+  .min-event-item.is-past .min-event-time {
     text-decoration: line-through;
     text-decoration-thickness: 1.5px;
     color: var(--cal-text-secondary);
   }
 
   .min-event-item.is-past .min-event-icon,
-  .min-event-item.is-past .min-event-time,
   .min-event-item.is-past .min-event-duration {
     color: var(--cal-text-secondary);
   }

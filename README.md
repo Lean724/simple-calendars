@@ -1,6 +1,6 @@
-# Simple-Calendars (Month, Week, Day & Event)
+# Simple-Calendars (Month, Day & Focus Event)
 
-A suite of **4 minimalist Home Assistant Lovelace calendar cards** — Monthly, Weekly, Daily, and Event Card. Designed with clean typography, native multi-entity `calendar.*` support, frosted glass transparency controls, automatic midnight day rollover, built-in translations in **10 languages**, and a full visual editor.
+A suite of **3 minimalist Home Assistant Lovelace calendar cards** — Monthly, Daily, and Focus Event. Designed with clean typography, scalable layouts for `4x12` and larger Sections slots, native multi-entity `calendar.*` support, frosted glass transparency controls, automatic midnight day rollover, built-in translations in **10 languages**, and a full visual editor.
 
 ![Simple-Calendars Daily Minimalist Card Preview](docs/preview-day.svg)
 
@@ -10,16 +10,16 @@ Compatible with **Home Assistant Marketplace** (**HACS**) and both **Sections** 
 
 | Card | YAML Type | Description |
 | :--- | :--- | :--- |
-| **Event Card** | `custom:simple-calendar-event-card` | Compact now/next tracker displaying **Previous events**, **Current events** (with live progress bar), and **Upcoming events**, plus optional title bar and calendar filters. |
+| **Focus Event Card** | `custom:simple-calendar-focus-event-card` | Compact now/next tracker displaying **Previous events**, **Current events** (with live progress bar), and **Upcoming events**, plus optional title bar and calendar filters. |
 | **Daily Calendar** | `custom:simple-calendar-day-card` | Minimalist daily agenda widget with week pill (`Week 47`), day summary, remaining time, and real-time progress bar. |
-| **Weekly Calendar** | `custom:simple-calendar-week-card` | Minimalist multi-day weekly agenda with week pill, schedule times, and progress bars. |
-| **Monthly Calendar** | `custom:simple-calendar-month-card` | Clean monthly grid with color-coded event pills and a minimalist focused-day summary below. |
+| **Monthly Calendar** | `custom:simple-calendar-month-card` | Scalable monthly grid (`compact`, `normal`, `large`) with **pills** or **dots**, plus a minimalist focused-day summary matching the Daily Card. |
 
-> *(Note: Legacy aliases `custom:ha-calendar-month-card`, `custom:ha-calendar-week-card`, `custom:ha-calendar-day-card`, and `custom:ha-calendar-event-card` remain supported for backward compatibility.)*
+> *(Note: Legacy aliases `custom:simple-calendar-event-card`, `custom:ha-calendar-event-card`, `custom:ha-calendar-month-card`, and `custom:ha-calendar-day-card` remain supported for backward compatibility. In v2.0.0, Weekly Card was removed for future refinement and Event Card was renamed to Focus Event Card.)*
 
 ## Key Features
 
-- **Real-time event tracking & past-event dimming**: Finished timed events and past all-day events are automatically dimmed, grayed out, and struck through across **Daily**, **Weekly**, **Monthly** (grid pills, focused summary, and day dialog), and **Event Card** (`dim_completed_events: true` by default), or hidden completely with `show_completed_events: false`.
+- **Real-time event tracking & past-event dimming**: Finished timed events and past all-day events are automatically dimmed, grayed out, and struck through across **Daily**, **Monthly** (grid pills/dots, focused summary, and day dialog), and **Focus Event** (`dim_completed_events: true` by default), or hidden completely with `show_completed_events: false`.
+- **Scalable Monthly Card (`4x12` ready)**: Choose between `compact`, `normal`, and `large` grid scales, switch cell events between `pills` (default) and `dots`, and toggle the Daily-style bottom summary (`show_day_summary`).
 - **Automatic midnight rollover**: Cards anchored to today automatically advance at midnight while respecting manual navigation when `show_navigation: true`.
 - **Advanced display options**: Toggle the current day highlight/column (`show_current_day`), toggle all-day events (`show_all_day_events`), place all-day events at the top or bottom (`all_day_position`), and show a clean empty-day message when no events are scheduled.
 - **Unlimited multi-entity calendars**: Combine any number of `calendar.*` entities into a single card with custom names, MDI icons, and colors.
@@ -34,7 +34,7 @@ Compatible with **Home Assistant Marketplace** (**HACS**) and both **Sections** 
 ### Via HACS / Home Assistant Marketplace (Recommended)
 
 1. Open **HACS** (or **Home Assistant Marketplace**) in Home Assistant.
-2. Go to **Frontend** and search for **Simple-Calendars (Month, Week, Day & Event)**.
+2. Go to **Frontend** and search for **Simple-Calendars (Month, Day & Focus Event)**.
    - If the repository is not yet in the default catalog, open the top-right **⋮** menu → **Custom repositories**, add `https://github.com/Lean724/simple-calendars` with category **Dashboard** / **Lovelace**, and then search for it.
 3. Click **Download** / **Install**.
 4. Reload your browser when prompted by Home Assistant.
@@ -65,7 +65,7 @@ Compatible with **Home Assistant Marketplace** (**HACS**) and both **Sections** 
 
 | Option | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `title` | `string` | — | Title displayed in the top bar of Event Card and Month Card. |
+| `title` | `string` | — | Title displayed in the top bar of Focus Event Card and Month Card. |
 | `entities` | `list` | **Required** | List of calendar entities (`calendar.*`). |
 | `first_day_of_week` | `number` | `1` | `1` for Monday, `0` for Sunday. |
 | `language` | `string` | Auto | `'en'`, `'es'`, `'zh-Hans'`, `'de'`, `'it'`, `'fr'`, `'pt'`, `'ru'`, `'pl'`, `'nl'`. |
@@ -73,7 +73,7 @@ Compatible with **Home Assistant Marketplace** (**HACS**) and both **Sections** 
 | `show_all_day_events` | `boolean` | `true` | Shows or hides all-day events. |
 | `all_day_position` | `'top' \| 'bottom'` | `'top'` | Places all-day events at the top or bottom of the day list. |
 | `show_completed_events` | `boolean` | `true` | Shows or hides already finished events. |
-| `dim_completed_events` | `boolean` | `true` | Dims, grays out, and strikes through finished events when visible across Day, Week, Month, and Event cards. |
+| `dim_completed_events` | `boolean` | `true` | Dims, grays out, and strikes through finished events when visible across Day, Month, and Focus Event cards. |
 | `transparent` | `boolean` | `false` | 100% transparent background with no borders or shadows. |
 | `background_opacity` | `number` | `100` | Card background opacity (`0` to `100`). |
 | `background_color` | `string` | HA theme | Custom base background color. |
@@ -83,7 +83,7 @@ Compatible with **Home Assistant Marketplace** (**HACS**) and both **Sections** 
 | `hide_shadow` | `boolean` | `false` | Hides the card drop shadow. |
 | `use_entity_color` | `boolean` | `false` | Tints event icon and progress bar using the entity's color. |
 
-### `Event Card` Options (`custom:simple-calendar-event-card`)
+### `Focus Event Card` Options (`custom:simple-calendar-focus-event-card`)
 
 | Option | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
@@ -93,8 +93,8 @@ Compatible with **Home Assistant Marketplace** (**HACS**) and both **Sections** 
 | `show_entity_toggles` | `boolean` | `false` | Shows quick calendar filter chips in the title bar. |
 
 ```yaml
-type: custom:simple-calendar-event-card
-title: Current Agenda
+type: custom:simple-calendar-focus-event-card
+title: Focus Agenda
 max_previous_events: 3
 max_upcoming_events: 2
 show_all_day_events: true
@@ -138,25 +138,35 @@ entities:
     icon: mdi:home
 ```
 
-### Weekly Card Options (`custom:simple-calendar-week-card`)
-
-| Option | Type | Default | Description |
-| :--- | :--- | :--- | :--- |
-| `days_to_show` | `number` | `7` | Number of days to display (`1`–`14`). |
-| `show_week_number` | `boolean` | `true` | Shows the week pill. |
-| `show_progress_bar` | `boolean` | `true` | Shows the per-event progress bar. |
-| `show_empty_days` | `boolean` | `false` | Includes days with no events in the weekly summary. |
-| `show_navigation` | `boolean` | `false` | Shows compact `< Today >` navigation controls. |
-
 ### Monthly Card Options (`custom:simple-calendar-month-card`)
 
 | Option | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `max_events_per_day` | `number` | `3` | Maximum visible events per cell before showing `+N more`. |
+| `calendar_size` | `'compact' \| 'normal' \| 'large'` | `'normal'` | Grid row scale (`compact` fits `4x12` Sections slots cleanly). |
+| `event_display` | `'pills' \| 'dots'` | `'pills'` | Renders text pills or minimal color dots inside each day cell. |
+| `max_events_per_day` | `number` | `3` (`2` compact, `4` dots) | Maximum visible events per cell before showing `+N more`. |
 | `show_week_numbers` | `boolean` | `false` | Shows the left ISO week number column. |
-| `compact` | `boolean` | `true` | Compact cell height. |
+| `show_day_summary` | `boolean` | `true` | Shows the Daily-style selected day summary below the monthly grid. |
+| `show_progress_bar` | `boolean` | `true` | Shows the live progress bar inside the selected day summary. |
 | `show_header` | `boolean` | `true` | Shows the month navigation header. |
 | `show_entity_toggles` | `boolean` | `false` | Shows interactive chips to filter calendars. |
+
+```yaml
+type: custom:simple-calendar-month-card
+calendar_size: compact
+event_display: pills
+show_day_summary: true
+show_progress_bar: true
+show_completed_events: true
+dim_completed_events: true
+entities:
+  - entity: calendar.work
+    name: Work
+    icon: mdi:briefcase
+  - entity: calendar.personal
+    name: Personal
+    icon: mdi:account
+```
 
 ---
 

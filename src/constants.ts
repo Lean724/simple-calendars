@@ -1,17 +1,16 @@
 import type { HomeAssistant, SupportedLanguage } from './types';
 
-export const CARD_VERSION = '1.4.0';
+export const CARD_VERSION = '2.0.0';
 
 export const MONTH_CARD_TYPE = 'simple-calendar-month-card';
-export const WEEK_CARD_TYPE = 'simple-calendar-week-card';
 export const DAY_CARD_TYPE = 'simple-calendar-day-card';
-export const EVENT_CARD_TYPE = 'simple-calendar-event-card';
+export const FOCUS_EVENT_CARD_TYPE = 'simple-calendar-focus-event-card';
 export const EDITOR_TAG = 'simple-calendar-card-editor';
 
 export const LEGACY_MONTH_CARD_TYPE = 'ha-calendar-month-card';
-export const LEGACY_WEEK_CARD_TYPE = 'ha-calendar-week-card';
 export const LEGACY_DAY_CARD_TYPE = 'ha-calendar-day-card';
-export const LEGACY_EVENT_CARD_TYPE = 'ha-calendar-event-card';
+export const LEGACY_EVENT_CARD_TYPE = 'simple-calendar-event-card';
+export const LEGACY_HA_EVENT_CARD_TYPE = 'ha-calendar-event-card';
 
 export const DEFAULT_CALENDAR_COLORS: readonly string[] = [
   '#1a73e8',
@@ -48,6 +47,7 @@ export interface TranslationStrings {
   refresh: string;
   allDay: string;
   noEvents: string;
+  noEventsDay: string;
   moreEvents: string;
   noCalendars: string;
   noCalendarsHint: string;
@@ -93,7 +93,6 @@ export interface TranslationStrings {
   editorDimCompletedEvents: string;
   editorMaxPreviousEvents: string;
   editorMaxUpcomingEvents: string;
-  editorShowEmptyDays: string;
   editorViewSection: string;
   editorShowWeekNumber: string;
   editorShowProgressBar: string;
@@ -107,10 +106,16 @@ export interface TranslationStrings {
   editorLangAuto: string;
   editorShowHeader: string;
   editorShowToggles: string;
+  editorCalendarSize: string;
+  editorSizeCompact: string;
+  editorSizeNormal: string;
+  editorSizeLarge: string;
+  editorEventDisplay: string;
+  editorDisplayPills: string;
+  editorDisplayDots: string;
+  editorShowDaySummary: string;
   editorMaxEvents: string;
   editorShowWeekNumbers: string;
-  editorCompact: string;
-  editorDaysToShow: string;
   editorAddEntity: string;
   editorEntity: string;
   editorCustomName: string;
@@ -128,6 +133,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     refresh: 'Actualizar',
     allDay: 'Todo el día',
     noEvents: 'Sin eventos hoy',
+    noEventsDay: 'Sin eventos',
     moreEvents: 'más',
     noCalendars: 'No hay calendarios configurados',
     noCalendarsHint: 'Añade una o más entidades calendar.* en la configuración de la tarjeta.',
@@ -173,7 +179,6 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     editorDimCompletedEvents: 'Grisar eventos finalizados',
     editorMaxPreviousEvents: 'Cantidad de eventos previos',
     editorMaxUpcomingEvents: 'Cantidad de eventos próximos',
-    editorShowEmptyDays: 'Mostrar días sin eventos',
     editorViewSection: 'Opciones de vista',
     editorShowWeekNumber: 'Mostrar número de semana',
     editorShowProgressBar: 'Mostrar barra de progreso',
@@ -187,10 +192,16 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     editorLangAuto: 'Automático (Home Assistant)',
     editorShowHeader: 'Mostrar cabecera de navegación',
     editorShowToggles: 'Mostrar filtros por calendario',
+    editorCalendarSize: 'Tamaño del calendario',
+    editorSizeCompact: 'Compacto',
+    editorSizeNormal: 'Normal',
+    editorSizeLarge: 'Grande',
+    editorEventDisplay: 'Estilo de eventos en grilla',
+    editorDisplayPills: 'Píldoras (con texto)',
+    editorDisplayDots: 'Puntos (minimalista)',
+    editorShowDaySummary: 'Mostrar detalle del día seleccionado',
     editorMaxEvents: 'Máx. eventos visibles por día',
     editorShowWeekNumbers: 'Mostrar número de semana',
-    editorCompact: 'Modo compacto',
-    editorDaysToShow: 'Días a mostrar',
     editorAddEntity: 'Añadir calendario',
     editorEntity: 'Entidad de calendario',
     editorCustomName: 'Nombre personalizado',
@@ -206,6 +217,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     refresh: '刷新',
     allDay: '全天',
     noEvents: '今天没有日程',
+    noEventsDay: '没有日程',
     moreEvents: '更多',
     noCalendars: '未配置日历',
     noCalendarsHint: '请在卡片配置中添加一个或多个 calendar.* 实体。',
@@ -251,7 +263,6 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     editorDimCompletedEvents: '灰显已结束的日程',
     editorMaxPreviousEvents: '显示的已结束日程数',
     editorMaxUpcomingEvents: '显示的即将到来日程数',
-    editorShowEmptyDays: '显示无日程的日期',
     editorViewSection: '视图选项',
     editorShowWeekNumber: '显示周数',
     editorShowProgressBar: '显示进度条',
@@ -265,10 +276,16 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     editorLangAuto: '自动 (Home Assistant)',
     editorShowHeader: '显示导航栏',
     editorShowToggles: '显示日历筛选标签',
+    editorCalendarSize: '日历尺寸',
+    editorSizeCompact: '紧凑',
+    editorSizeNormal: '标准',
+    editorSizeLarge: '大号',
+    editorEventDisplay: '网格日程样式',
+    editorDisplayPills: '标签（含文字）',
+    editorDisplayDots: '圆点（极简）',
+    editorShowDaySummary: '显示所选日期详情',
     editorMaxEvents: '每日最多显示日程数',
     editorShowWeekNumbers: '显示周数',
-    editorCompact: '紧凑模式',
-    editorDaysToShow: '显示天数',
     editorAddEntity: '添加日历',
     editorEntity: '日历实体',
     editorCustomName: '自定义名称',
@@ -284,6 +301,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     refresh: 'Aktualisieren',
     allDay: 'Ganztägig',
     noEvents: 'Heute keine Termine',
+    noEventsDay: 'Keine Termine',
     moreEvents: 'mehr',
     noCalendars: 'Keine Kalender konfiguriert',
     noCalendarsHint: 'Füge eine oder mehrere calendar.*-Entitäten in der Kartenkonfiguration hinzu.',
@@ -329,7 +347,6 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     editorDimCompletedEvents: 'Beendete Termine ausgrauen',
     editorMaxPreviousEvents: 'Anzahl vorheriger Termine',
     editorMaxUpcomingEvents: 'Anzahl kommender Termine',
-    editorShowEmptyDays: 'Tage ohne Termine anzeigen',
     editorViewSection: 'Ansichtsoptionen',
     editorShowWeekNumber: 'Kalenderwoche anzeigen',
     editorShowProgressBar: 'Fortschrittsbalken anzeigen',
@@ -343,10 +360,16 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     editorLangAuto: 'Automatisch (Home Assistant)',
     editorShowHeader: 'Navigationsleiste anzeigen',
     editorShowToggles: 'Kalenderfilter anzeigen',
+    editorCalendarSize: 'Kalendergröße',
+    editorSizeCompact: 'Kompakt',
+    editorSizeNormal: 'Normal',
+    editorSizeLarge: 'Groß',
+    editorEventDisplay: 'Terminanzeige im Raster',
+    editorDisplayPills: 'Kapseln (mit Text)',
+    editorDisplayDots: 'Punkte (minimalistisch)',
+    editorShowDaySummary: 'Details des ausgewählten Tages anzeigen',
     editorMaxEvents: 'Max. sichtbare Termine pro Tag',
     editorShowWeekNumbers: 'Kalenderwochen anzeigen',
-    editorCompact: 'Kompaktmodus',
-    editorDaysToShow: 'Anzahl der Tage',
     editorAddEntity: 'Kalender hinzufügen',
     editorEntity: 'Kalender-Entität',
     editorCustomName: 'Benutzerdefinierter Name',
@@ -362,6 +385,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     refresh: 'Refresh',
     allDay: 'All day',
     noEvents: 'No events today',
+    noEventsDay: 'No events',
     moreEvents: 'more',
     noCalendars: 'No calendars configured',
     noCalendarsHint: 'Add one or more calendar.* entities in the card configuration.',
@@ -407,7 +431,6 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     editorDimCompletedEvents: 'Dim completed events',
     editorMaxPreviousEvents: 'Previous events to show',
     editorMaxUpcomingEvents: 'Upcoming events to show',
-    editorShowEmptyDays: 'Show days without events',
     editorViewSection: 'View options',
     editorShowWeekNumber: 'Show week number',
     editorShowProgressBar: 'Show progress bar',
@@ -421,10 +444,16 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     editorLangAuto: 'Automatic (Home Assistant)',
     editorShowHeader: 'Show navigation header',
     editorShowToggles: 'Show calendar filter chips',
+    editorCalendarSize: 'Calendar size',
+    editorSizeCompact: 'Compact',
+    editorSizeNormal: 'Normal',
+    editorSizeLarge: 'Large',
+    editorEventDisplay: 'Grid event style',
+    editorDisplayPills: 'Pills (with text)',
+    editorDisplayDots: 'Dots (minimal)',
+    editorShowDaySummary: 'Show selected day details',
     editorMaxEvents: 'Max visible events per day',
     editorShowWeekNumbers: 'Show week numbers',
-    editorCompact: 'Compact mode',
-    editorDaysToShow: 'Days to show',
     editorAddEntity: 'Add calendar',
     editorEntity: 'Calendar entity',
     editorCustomName: 'Custom name',
@@ -440,6 +469,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     refresh: 'Atualizar',
     allDay: 'Todo o dia',
     noEvents: 'Sem eventos hoje',
+    noEventsDay: 'Sem eventos',
     moreEvents: 'mais',
     noCalendars: 'Nenhum calendário configurado',
     noCalendarsHint: 'Adicione uma ou mais entidades calendar.* na configuração do cartão.',
@@ -485,7 +515,6 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     editorDimCompletedEvents: 'Esmaecer eventos concluídos',
     editorMaxPreviousEvents: 'Quantidade de eventos anteriores',
     editorMaxUpcomingEvents: 'Quantidade de próximos eventos',
-    editorShowEmptyDays: 'Mostrar dias sem eventos',
     editorViewSection: 'Opções de visualização',
     editorShowWeekNumber: 'Mostrar número da semana',
     editorShowProgressBar: 'Mostrar barra de progresso',
@@ -499,10 +528,16 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     editorLangAuto: 'Automático (Home Assistant)',
     editorShowHeader: 'Mostrar cabeçalho de navegação',
     editorShowToggles: 'Mostrar filtros de calendário',
+    editorCalendarSize: 'Tamanho do calendário',
+    editorSizeCompact: 'Compacto',
+    editorSizeNormal: 'Normal',
+    editorSizeLarge: 'Grande',
+    editorEventDisplay: 'Estilo de eventos na grade',
+    editorDisplayPills: 'Pílulas (com texto)',
+    editorDisplayDots: 'Pontos (minimalista)',
+    editorShowDaySummary: 'Mostrar detalhes do dia selecionado',
     editorMaxEvents: 'Máx. eventos visíveis por dia',
     editorShowWeekNumbers: 'Mostrar números das semanas',
-    editorCompact: 'Modo compacto',
-    editorDaysToShow: 'Dias para mostrar',
     editorAddEntity: 'Adicionar calendário',
     editorEntity: 'Entidade de calendário',
     editorCustomName: 'Nome personalizado',
@@ -518,6 +553,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     refresh: 'Aggiorna',
     allDay: 'Tutto il giorno',
     noEvents: 'Nessun evento oggi',
+    noEventsDay: 'Nessun evento',
     moreEvents: 'altri',
     noCalendars: 'Nessun calendario configurato',
     noCalendarsHint: 'Aggiungi una o più entità calendar.* nella configurazione della scheda.',
@@ -563,7 +599,6 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     editorDimCompletedEvents: 'Attenua eventi terminati',
     editorMaxPreviousEvents: 'Numero di eventi precedenti',
     editorMaxUpcomingEvents: 'Numero di prossimi eventi',
-    editorShowEmptyDays: 'Mostra giorni senza eventi',
     editorViewSection: 'Opzioni vista',
     editorShowWeekNumber: 'Mostra numero settimana',
     editorShowProgressBar: 'Mostra barra di avanzamento',
@@ -577,10 +612,16 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     editorLangAuto: 'Automatico (Home Assistant)',
     editorShowHeader: 'Mostra intestazione',
     editorShowToggles: 'Mostra filtri calendario',
+    editorCalendarSize: 'Dimensione calendario',
+    editorSizeCompact: 'Compatto',
+    editorSizeNormal: 'Normale',
+    editorSizeLarge: 'Grande',
+    editorEventDisplay: 'Stile eventi nella griglia',
+    editorDisplayPills: 'Pillole (con testo)',
+    editorDisplayDots: 'Puntini (minimale)',
+    editorShowDaySummary: 'Mostra dettagli giorno selezionato',
     editorMaxEvents: 'Max eventi visibili al giorno',
     editorShowWeekNumbers: 'Mostra numeri settimana',
-    editorCompact: 'Modalità compatta',
-    editorDaysToShow: 'Giorni da mostrare',
     editorAddEntity: 'Aggiungi calendario',
     editorEntity: 'Entità calendario',
     editorCustomName: 'Nome personalizzato',
@@ -596,6 +637,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     refresh: 'Actualiser',
     allDay: 'Toute la journée',
     noEvents: "Aucun événement aujourd'hui",
+    noEventsDay: 'Aucun événement',
     moreEvents: 'de plus',
     noCalendars: 'Aucun calendrier configuré',
     noCalendarsHint: 'Ajoutez une ou plusieurs entités calendar.* dans la configuration de la carte.',
@@ -641,7 +683,6 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     editorDimCompletedEvents: 'Griser les événements terminés',
     editorMaxPreviousEvents: "Nombre d'événements précédents",
     editorMaxUpcomingEvents: "Nombre d'événements à venir",
-    editorShowEmptyDays: 'Afficher les jours sans événement',
     editorViewSection: "Options d'affichage",
     editorShowWeekNumber: 'Afficher le numéro de semaine',
     editorShowProgressBar: 'Afficher la barre de progression',
@@ -655,10 +696,16 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     editorLangAuto: 'Automatique (Home Assistant)',
     editorShowHeader: "Afficher l'en-tête de navigation",
     editorShowToggles: 'Afficher les filtres de calendrier',
+    editorCalendarSize: 'Taille du calendrier',
+    editorSizeCompact: 'Compact',
+    editorSizeNormal: 'Normal',
+    editorSizeLarge: 'Grand',
+    editorEventDisplay: 'Style des événements dans la grille',
+    editorDisplayPills: 'Pastilles (avec texte)',
+    editorDisplayDots: 'Points (minimaliste)',
+    editorShowDaySummary: 'Afficher le détail du jour sélectionné',
     editorMaxEvents: 'Max événements visibles par jour',
     editorShowWeekNumbers: 'Afficher les numéros de semaine',
-    editorCompact: 'Mode compact',
-    editorDaysToShow: 'Jours à afficher',
     editorAddEntity: 'Ajouter un calendrier',
     editorEntity: 'Entité calendrier',
     editorCustomName: 'Nom personnalisé',
@@ -674,6 +721,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     refresh: 'Обновить',
     allDay: 'Весь день',
     noEvents: 'Сегодня событий нет',
+    noEventsDay: 'Нет событий',
     moreEvents: 'ещё',
     noCalendars: 'Календари не настроены',
     noCalendarsHint: 'Добавьте одну или несколько сущностей calendar.* в настройках карточки.',
@@ -719,7 +767,6 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     editorDimCompletedEvents: 'Выделять серым завершённые события',
     editorMaxPreviousEvents: 'Количество прошедших событий',
     editorMaxUpcomingEvents: 'Количество предстоящих событий',
-    editorShowEmptyDays: 'Показывать дни без событий',
     editorViewSection: 'Параметры отображения',
     editorShowWeekNumber: 'Показывать номер недели',
     editorShowProgressBar: 'Показывать индикатор прогресса',
@@ -733,10 +780,16 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     editorLangAuto: 'Автоматически (Home Assistant)',
     editorShowHeader: 'Показывать панель навигации',
     editorShowToggles: 'Показывать фильтры календарей',
+    editorCalendarSize: 'Размер календаря',
+    editorSizeCompact: 'Компактный',
+    editorSizeNormal: 'Обычный',
+    editorSizeLarge: 'Крупный',
+    editorEventDisplay: 'Отображение событий в сетке',
+    editorDisplayPills: 'Плашки (с текстом)',
+    editorDisplayDots: 'Точки (минимализм)',
+    editorShowDaySummary: 'Показывать детали выбранного дня',
     editorMaxEvents: 'Макс. событий в день',
     editorShowWeekNumbers: 'Показывать номера недель',
-    editorCompact: 'Компактный режим',
-    editorDaysToShow: 'Количество дней',
     editorAddEntity: 'Добавить календарь',
     editorEntity: 'Сущность календаря',
     editorCustomName: 'Пользовательское название',
@@ -752,6 +805,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     refresh: 'Odśwież',
     allDay: 'Cały dzień',
     noEvents: 'Brak wydarzeń dzisiaj',
+    noEventsDay: 'Brak wydarzeń',
     moreEvents: 'więcej',
     noCalendars: 'Brak skonfigurowanych kalendarzy',
     noCalendarsHint: 'Dodaj jedną lub więcej encji calendar.* w konfiguracji karty.',
@@ -797,7 +851,6 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     editorDimCompletedEvents: 'Wyszarz zakończone wydarzenia',
     editorMaxPreviousEvents: 'Liczba poprzednich wydarzeń',
     editorMaxUpcomingEvents: 'Liczba nadchodzących wydarzeń',
-    editorShowEmptyDays: 'Pokaż dni bez wydarzeń',
     editorViewSection: 'Opcje widoku',
     editorShowWeekNumber: 'Pokaż numer tygodnia',
     editorShowProgressBar: 'Pokaż pasek postępu',
@@ -811,10 +864,16 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     editorLangAuto: 'Automatyczny (Home Assistant)',
     editorShowHeader: 'Pokaż nagłówek nawigacji',
     editorShowToggles: 'Pokaż filtry kalendarzy',
+    editorCalendarSize: 'Rozmiar kalendarza',
+    editorSizeCompact: 'Kompaktowy',
+    editorSizeNormal: 'Normalny',
+    editorSizeLarge: 'Duży',
+    editorEventDisplay: 'Styl wydarzeń w siatce',
+    editorDisplayPills: 'Etykiety (z tekstem)',
+    editorDisplayDots: 'Kropki (minimalistyczny)',
+    editorShowDaySummary: 'Pokaż szczegóły wybranego dnia',
     editorMaxEvents: 'Maks. wydarzeń na dzień',
     editorShowWeekNumbers: 'Pokaż numery tygodni',
-    editorCompact: 'Tryb kompaktowy',
-    editorDaysToShow: 'Liczba dni',
     editorAddEntity: 'Dodaj kalendarz',
     editorEntity: 'Encja kalendarza',
     editorCustomName: 'Własna nazwa',
@@ -830,6 +889,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     refresh: 'Vernieuwen',
     allDay: 'Hele dag',
     noEvents: 'Geen afspraken vandaag',
+    noEventsDay: 'Geen afspraken',
     moreEvents: 'meer',
     noCalendars: "Geen agenda's geconfigureerd",
     noCalendarsHint: 'Voeg een of meer calendar.*-entiteiten toe in de kaartconfiguratie.',
@@ -875,7 +935,6 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     editorDimCompletedEvents: 'Afgelopen afspraken grijs weergeven',
     editorMaxPreviousEvents: 'Aantal eerdere afspraken',
     editorMaxUpcomingEvents: 'Aantal komende afspraken',
-    editorShowEmptyDays: 'Dagen zonder afspraken tonen',
     editorViewSection: 'Weergave-opties',
     editorShowWeekNumber: 'Weeknummer tonen',
     editorShowProgressBar: 'Voortgangsbalk tonen',
@@ -889,10 +948,16 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     editorLangAuto: 'Automatisch (Home Assistant)',
     editorShowHeader: 'Navigatiekop tonen',
     editorShowToggles: 'Agendafilters tonen',
+    editorCalendarSize: 'Agendagrootte',
+    editorSizeCompact: 'Compact',
+    editorSizeNormal: 'Normaal',
+    editorSizeLarge: 'Groot',
+    editorEventDisplay: 'Weergave van afspraken in raster',
+    editorDisplayPills: 'Labels (met tekst)',
+    editorDisplayDots: 'Stippen (minimalistisch)',
+    editorShowDaySummary: 'Details van geselecteerde dag tonen',
     editorMaxEvents: 'Max. zichtbare afspraken per dag',
     editorShowWeekNumbers: 'Weeknummers tonen',
-    editorCompact: 'Compacte modus',
-    editorDaysToShow: 'Aantal dagen',
     editorAddEntity: 'Agenda toevoegen',
     editorEntity: 'Agenda-entiteit',
     editorCustomName: 'Aangepaste naam',

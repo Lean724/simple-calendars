@@ -22,7 +22,11 @@ assert(
   distBytes.equals(rootBytes),
   'dist/simple-calendars.js and root simple-calendars.js must be identical',
 );
-console.log('✓ Compiled bundle exists in dist/ and root and matches byte-for-byte.');
+assert(
+  distBytes.toString('utf8').includes('2.0.0'),
+  'Compiled bundle must contain v2.0.0 version marker',
+);
+console.log('✓ Compiled bundle exists in dist/ and root, matches byte-for-byte, and reports v2.0.0.');
 
 // 2. Verify 10-language i18n parity in src/constants.ts and src/utils/date-utils.ts
 const expectedLangs = ['en', 'es', 'zh-Hans', 'de', 'it', 'fr', 'pt', 'ru', 'pl', 'nl'];
@@ -35,10 +39,25 @@ const interfaceKeys = [...ifaceMatch[1].matchAll(/^\s*([A-Za-z0-9_]+)\s*:\s*stri
   (m) => m[1],
 );
 assert(interfaceKeys.length > 50, `Expected >50 translation keys, found ${interfaceKeys.length}`);
-assert(
-  interfaceKeys.includes('editorDimCompletedEvents'),
-  'TranslationStrings missing editorDimCompletedEvents',
-);
+
+for (const requiredKey of [
+  'editorDimCompletedEvents',
+  'noEventsDay',
+  'editorCalendarSize',
+  'editorEventDisplay',
+  'editorShowDaySummary',
+]) {
+  assert(
+    interfaceKeys.includes(requiredKey),
+    `TranslationStrings missing required key '${requiredKey}'`,
+  );
+}
+for (const obsoleteKey of ['editorShowEmptyDays', 'editorDaysToShow', 'editorCompact']) {
+  assert(
+    !interfaceKeys.includes(obsoleteKey),
+    `TranslationStrings must not contain obsolete Weekly/compact key '${obsoleteKey}'`,
+  );
+}
 
 const translationsMatch =
   /export const TRANSLATIONS:\s*Record<SupportedLanguage,\s*TranslationStrings>\s*=\s*(\{[\s\S]*?\n\});/.exec(
@@ -241,29 +260,37 @@ async function settleCard(el) {
   await el.updateComplete;
 }
 
-function extractButtonBlock(renderedHtml, titleText) {
-  const buttons = renderedHtml.match(/<button[\s\S]*?<\/button>/g) || [];
-  const found = buttons.find((b) => b.includes(titleText));
-  assert(found, `Could not find rendered <button> containing '${titleText}'`);
+function extractTagBlock(renderedHtml, tagName, matchText) {
+  const regex = new RegExp(`<${tagName}[\\s\\S]*?<\\/${tagName}>`, 'g');
+  const blocks = renderedHtml.match(regex) || [];
+  const found = blocks.find((b) => b.includes(matchText));
+  assert(found, `Could not find rendered <${tagName}> matching '${matchText}'`);
   return found;
 }
 
-function getButtonClassAttr(buttonHtml) {
-  const match = /class="([^"]*)"/.exec(buttonHtml);
+function extractButtonBlock(renderedHtml, titleText) {
+  return extractTagBlock(renderedHtml, 'button', titleText);
+}
+
+function getClassAttr(tagHtml) {
+  const match = /class="([^"]*)"/.exec(tagHtml);
   return match ? match[1].trim().split(/\s+/) : [];
 }
 
 const registry = setupDomShim();
 await import(pathToFileURL(distBundlePath).href);
 
+// Verify Weekly is NOT registered
+assert(!registry.has('simple-calendar-week-card'), 'Weekly card must NOT be registered');
+assert(!registry.has('ha-calendar-week-card'), 'Legacy Weekly alias must NOT be registered');
+
 const expectedTags = [
   'simple-calendar-month-card',
-  'simple-calendar-week-card',
   'simple-calendar-day-card',
-  'simple-calendar-event-card',
+  'simple-calendar-focus-event-card',
   'ha-calendar-month-card',
-  'ha-calendar-week-card',
   'ha-calendar-day-card',
+  'simple-calendar-event-card',
   'ha-calendar-event-card',
   'simple-calendar-card-editor',
   'ha-calendar-shared-header',
@@ -273,18 +300,17 @@ const expectedTags = [
 for (const tag of expectedTags) {
   assert(registry.has(tag), `Missing customElements registration for '${tag}'`);
 }
-for (const mainType of [
-  'simple-calendar-month-card',
-  'simple-calendar-week-card',
-  'simple-calendar-day-card',
-  'simple-calendar-event-card',
-]) {
-  assert(
-    globalThis.window.customCards.some((c) => c.type === mainType),
-    `window.customCards missing '${mainType}'`,
-  );
-}
-console.log('✓ All 4 cards, 4 legacy aliases, editor, header, and dialog register cleanly.');
+
+assert.deepEqual(
+  globalThis.window.customCards.map((c) => c.type),
+  [
+    'simple-calendar-month-card',
+    'simple-calendar-day-card',
+    'simple-calendar-focus-event-card',
+  ],
+  'window.customCards must register only the 3 canonical cards',
+);
+console.log('✓ Weekly removed; 3 canonical cards + 4 aliases, editor, header, and dialog register cleanly.');
 
 // Helper to construct deterministic dates in local time: 2026-11-20 is a Friday
 const fixedNow = new Date(2026, 10, 20, 14, 0, 0, 0);
@@ -357,19 +383,19 @@ function createMockHass(eventsByEntity, lang = 'en') {
   await settleCard(el);
 
   assert(
-    getButtonClassAttr(extractButtonBlock(el._rendered, 'Morning Sync')).includes('is-past'),
+    getClassAttr(extractButtonBlock(el._rendered, 'Morning Sync')).includes('is-past'),
     'Day card should dim past timed event by default (dim_completed_events omitted -> true)',
   );
   assert(
-    !getButtonClassAttr(extractButtonBlock(el._rendered, 'Active Workshop')).includes('is-past'),
+    !getClassAttr(extractButtonBlock(el._rendered, 'Active Workshop')).includes('is-past'),
     'Day card must not dim ongoing timed event',
   );
   assert(
-    !getButtonClassAttr(extractButtonBlock(el._rendered, 'Evening Review')).includes('is-past'),
+    !getClassAttr(extractButtonBlock(el._rendered, 'Evening Review')).includes('is-past'),
     'Day card must not dim future timed event',
   );
   assert(
-    !getButtonClassAttr(extractButtonBlock(el._rendered, 'Company Holiday')).includes('is-past'),
+    !getClassAttr(extractButtonBlock(el._rendered, 'Company Holiday')).includes('is-past'),
     'Day card must not dim today all-day event while day is ongoing',
   );
   assert(
@@ -385,7 +411,7 @@ function createMockHass(eventsByEntity, lang = 'en') {
   });
   await settleCard(el);
   assert(
-    !getButtonClassAttr(extractButtonBlock(el._rendered, 'Morning Sync')).includes('is-past'),
+    !getClassAttr(extractButtonBlock(el._rendered, 'Morning Sync')).includes('is-past'),
     'Day card with dim_completed_events: false must render past event without is-past',
   );
 
@@ -424,7 +450,7 @@ function createMockHass(eventsByEntity, lang = 'en') {
   el._currentNow = new Date(fixedNow);
   await settleCard(el);
   assert(
-    getButtonClassAttr(extractButtonBlock(el._rendered, 'Yesterday All Day')).includes('is-past'),
+    getClassAttr(extractButtonBlock(el._rendered, 'Yesterday All Day')).includes('is-past'),
     'Yesterday all-day event viewed on day 19 after midnight must have is-past',
   );
 
@@ -467,114 +493,7 @@ function createMockHass(eventsByEntity, lang = 'en') {
   console.log('✓ simple-calendar-day-card tests passed (dimming, all-day, hide, midnight rollover).');
 }
 
-// 5. Behavioral tests for simple-calendar-week-card
-{
-  const weekEventsFixture = [
-    {
-      uid: 'wk-yest-allday',
-      start: { date: '2026-11-19' },
-      end: { date: '2026-11-20' },
-      summary: 'Week Yesterday AllDay',
-    },
-    {
-      uid: 'wk-yest-timed',
-      start: { dateTime: new Date(2026, 10, 19, 10, 0, 0, 0).toISOString() },
-      end: { dateTime: new Date(2026, 10, 19, 11, 0, 0, 0).toISOString() },
-      summary: 'Week Yesterday Timed',
-    },
-    {
-      uid: 'wk-today-past',
-      start: { dateTime: new Date(2026, 10, 20, 9, 0, 0, 0).toISOString() },
-      end: { dateTime: new Date(2026, 10, 20, 10, 0, 0, 0).toISOString() },
-      summary: 'Week Today Past',
-    },
-    {
-      uid: 'wk-today-allday',
-      start: { date: '2026-11-20' },
-      end: { date: '2026-11-21' },
-      summary: 'Week Today AllDay',
-    },
-    {
-      uid: 'wk-today-future',
-      start: { dateTime: new Date(2026, 10, 20, 16, 0, 0, 0).toISOString() },
-      end: { dateTime: new Date(2026, 10, 20, 17, 0, 0, 0).toISOString() },
-      summary: 'Week Today Future',
-    },
-  ];
-
-  const el = mountElement(registry, 'simple-calendar-week-card');
-  el.hass = createMockHass({ 'calendar.week_test': weekEventsFixture });
-  el.setConfig({
-    type: 'custom:simple-calendar-week-card',
-    entities: [{ entity: 'calendar.week_test' }],
-    first_day_of_week: 1,
-    days_to_show: 7,
-  });
-  el.isConnected = true;
-  el.connectedCallback();
-  el._anchorDate = new Date(day20Start);
-  el._currentNow = new Date(fixedNow);
-  await settleCard(el);
-
-  assert(
-    getButtonClassAttr(extractButtonBlock(el._rendered, 'Week Yesterday AllDay')).includes('is-past'),
-    'Week card must dim yesterday all-day event by default',
-  );
-  assert(
-    getButtonClassAttr(extractButtonBlock(el._rendered, 'Week Yesterday Timed')).includes('is-past'),
-    'Week card must dim yesterday timed event by default',
-  );
-  assert(
-    getButtonClassAttr(extractButtonBlock(el._rendered, 'Week Today Past')).includes('is-past'),
-    'Week card must dim today past timed event by default',
-  );
-  assert(
-    !getButtonClassAttr(extractButtonBlock(el._rendered, 'Week Today AllDay')).includes('is-past'),
-    'Week card must not dim today all-day event',
-  );
-  assert(
-    !getButtonClassAttr(extractButtonBlock(el._rendered, 'Week Today Future')).includes('is-past'),
-    'Week card must not dim future timed event',
-  );
-
-  el.setConfig({
-    type: 'custom:simple-calendar-week-card',
-    entities: [{ entity: 'calendar.week_test' }],
-    first_day_of_week: 1,
-    days_to_show: 7,
-    dim_completed_events: false,
-  });
-  await settleCard(el);
-  assert(
-    !getButtonClassAttr(extractButtonBlock(el._rendered, 'Week Yesterday AllDay')).includes('is-past') &&
-      !getButtonClassAttr(extractButtonBlock(el._rendered, 'Week Today Past')).includes('is-past'),
-    'Week card with dim_completed_events: false must not apply is-past',
-  );
-
-  el.setConfig({
-    type: 'custom:simple-calendar-week-card',
-    entities: [{ entity: 'calendar.week_test' }],
-    show_navigation: false,
-  });
-  el._anchorDate = new Date(day19Start);
-  el.handleDayRollover(day20Start, day21Start);
-  assert.equal(el._anchorDate.getDate(), 21, 'Week card rollover updates anchor when nav disabled');
-
-  el.setConfig({
-    type: 'custom:simple-calendar-week-card',
-    entities: [{ entity: 'calendar.week_test' }],
-    show_navigation: true,
-  });
-  el._anchorDate = new Date(day19Start);
-  el.handleDayRollover(day20Start, day21Start);
-  assert.equal(el._anchorDate.getDate(), 19, 'Week card preserves manual navigation on rollover');
-
-  el.isConnected = false;
-  el.disconnectedCallback();
-  console.log('✓ simple-calendar-week-card tests passed (homogeneous dimming & midnight rollover).');
-}
-
-// 6. Behavioral tests for simple-calendar-month-card & ha-calendar-event-dialog
+// 5. Behavioral tests for simple-calendar-month-card & ha-calendar-event-dialog
 {
   const monthEventsFixture = [
     {
@@ -608,6 +527,7 @@ function createMockHass(eventsByEntity, lang = 'en') {
   el.setConfig({
     type: 'custom:simple-calendar-month-card',
     entities: [{ entity: 'calendar.month_test', color: '#1a73e8' }],
+    max_events_per_day: 4,
   });
   el.isConnected = true;
   el.connectedCallback();
@@ -616,51 +536,132 @@ function createMockHass(eventsByEntity, lang = 'en') {
   el._currentNow = new Date(fixedNow);
   await settleCard(el);
 
+  assert(
+    el._rendered.includes('month-root size-normal display-pills'),
+    'Month card should default to size-normal and display-pills',
+  );
+  assert.deepEqual(el.getGridOptions(), {
+    columns: 12,
+    min_columns: 6,
+    rows: 7,
+    min_rows: 4,
+  });
+
   const pillsHtml = el._rendered.split('class="month-focused-summary"')[0];
   const summaryHtml = el._rendered.split('class="month-focused-summary"')[1] || '';
 
   assert(
-    getButtonClassAttr(extractButtonBlock(pillsHtml, 'Yesterday Month AllDay')).includes('is-past'),
+    getClassAttr(extractButtonBlock(pillsHtml, 'Yesterday Month AllDay')).includes('is-past'),
     'Month grid all-day pill for yesterday must have is-past',
   );
   assert(
-    getButtonClassAttr(extractButtonBlock(pillsHtml, 'Morning Month Timed')).includes('is-past'),
+    getClassAttr(extractButtonBlock(pillsHtml, 'Morning Month Timed')).includes('is-past'),
     'Month grid timed pill for past event must have is-past',
   );
   assert(
-    !getButtonClassAttr(extractButtonBlock(pillsHtml, 'Today Month AllDay')).includes('is-past'),
+    !getClassAttr(extractButtonBlock(pillsHtml, 'Today Month AllDay')).includes('is-past'),
     'Month grid all-day pill for today must not have is-past',
   );
   assert(
-    !getButtonClassAttr(extractButtonBlock(pillsHtml, 'Future Month Timed')).includes('is-past'),
+    !getClassAttr(extractButtonBlock(pillsHtml, 'Future Month Timed')).includes('is-past'),
     'Month grid timed pill for future event must not have is-past',
   );
   assert(
-    getButtonClassAttr(extractButtonBlock(summaryHtml, 'Morning Month Timed')).includes('is-past'),
+    getClassAttr(extractButtonBlock(summaryHtml, 'Morning Month Timed')).includes('is-past'),
     'Month focused summary must dim past event by default',
   );
   assert(
-    !getButtonClassAttr(extractButtonBlock(summaryHtml, 'Future Month Timed')).includes('is-past'),
+    !getClassAttr(extractButtonBlock(summaryHtml, 'Future Month Timed')).includes('is-past'),
     'Month focused summary must not dim future event',
   );
+  assert(
+    summaryHtml.includes('role="progressbar"'),
+    'Month focused summary should show progress bar by default like Daily card',
+  );
 
-  // dim_completed_events: false
+  // Compact 4x12 sizing + dots display + show_day_summary: false
   el.setConfig({
     type: 'custom:simple-calendar-month-card',
     entities: [{ entity: 'calendar.month_test', color: '#1a73e8' }],
-    dim_completed_events: false,
+    calendar_size: 'compact',
+    event_display: 'dots',
+    show_day_summary: false,
   });
   await settleCard(el);
+  assert(
+    el._rendered.includes('month-root size-compact display-dots'),
+    'Month card should apply size-compact and display-dots classes',
+  );
+  assert.deepEqual(el.getGridOptions(), {
+    columns: 12,
+    min_columns: 6,
+    rows: 4,
+    min_rows: 4,
+  });
+  assert(
+    !el._rendered.includes('month-focused-summary'),
+    'Month card with show_day_summary: false must hide bottom summary',
+  );
+  assert(
+    getClassAttr(extractTagBlock(el._rendered, 'span', 'Morning Month Timed')).includes('is-past'),
+    'Month dots display must apply is-past to past timed event dot',
+  );
+  assert(
+    !getClassAttr(extractTagBlock(el._rendered, 'span', 'Future Month Timed')).includes('is-past'),
+    'Month dots display must not apply is-past to future timed event dot',
+  );
+
+  // Large size + legacy compact: true fallback + empty day summary consistency
+  el.setConfig({
+    type: 'custom:simple-calendar-month-card',
+    entities: [{ entity: 'calendar.month_test', color: '#1a73e8' }],
+    calendar_size: 'large',
+    show_progress_bar: false,
+  });
+  el._focusedDay = new Date(2026, 10, 10, 0, 0, 0, 0);
+  await settleCard(el);
+  assert(el._rendered.includes('month-root size-large display-pills'));
+  assert(
+    el._rendered.includes('month-focused-summary') &&
+      el._rendered.includes(translationsObj.en.noEventsDay),
+    'Month focused summary must stay visible with noEventsDay message when selected day is empty',
+  );
+
+  el.setConfig({
+    type: 'custom:simple-calendar-month-card',
+    entities: [{ entity: 'calendar.month_test', color: '#1a73e8' }],
+    compact: true,
+    dim_completed_events: false,
+    max_events_per_day: 4,
+  });
+  el._focusedDay = new Date(day20Start);
+  await settleCard(el);
+  assert(
+    el._rendered.includes('month-root size-compact display-pills'),
+    'Legacy compact: true must map to size-compact when calendar_size is omitted',
+  );
   const pillsNoDim = el._rendered.split('class="month-focused-summary"')[0];
   const summaryNoDim = el._rendered.split('class="month-focused-summary"')[1] || '';
   assert(
-    !getButtonClassAttr(extractButtonBlock(pillsNoDim, 'Yesterday Month AllDay')).includes('is-past') &&
-      !getButtonClassAttr(extractButtonBlock(pillsNoDim, 'Morning Month Timed')).includes('is-past'),
+    !getClassAttr(extractButtonBlock(pillsNoDim, 'Yesterday Month AllDay')).includes('is-past') &&
+      !getClassAttr(extractButtonBlock(pillsNoDim, 'Morning Month Timed')).includes('is-past'),
     'Month grid pills with dim_completed_events: false must not have is-past',
   );
   assert(
-    !getButtonClassAttr(extractButtonBlock(summaryNoDim, 'Morning Month Timed')).includes('is-past'),
+    !getClassAttr(extractButtonBlock(summaryNoDim, 'Morning Month Timed')).includes('is-past'),
     'Month focused summary with dim_completed_events: false must not have is-past',
+  );
+
+  // Explicit show_progress_bar: false in summary
+  el.setConfig({
+    type: 'custom:simple-calendar-month-card',
+    entities: [{ entity: 'calendar.month_test', color: '#1a73e8' }],
+    show_progress_bar: false,
+  });
+  await settleCard(el);
+  assert(
+    !(el._rendered.split('class="month-focused-summary"')[1] || '').includes('role="progressbar"'),
+    'Month focused summary must hide progress bar when show_progress_bar is false',
   );
 
   // Month midnight rollover across month boundary
@@ -720,26 +721,26 @@ function createMockHass(eventsByEntity, lang = 'en') {
   await settleCard(dialog);
 
   assert(
-    getButtonClassAttr(extractButtonBlock(dialog._rendered, 'Dialog Past Timed')).includes('is-past'),
+    getClassAttr(extractButtonBlock(dialog._rendered, 'Dialog Past Timed')).includes('is-past'),
     'Event dialog day list must apply is-past to finished events when dimCompletedEvents is true',
   );
   assert(
-    !getButtonClassAttr(extractButtonBlock(dialog._rendered, 'Dialog Future Timed')).includes('is-past'),
+    !getClassAttr(extractButtonBlock(dialog._rendered, 'Dialog Future Timed')).includes('is-past'),
     'Event dialog day list must not apply is-past to upcoming events',
   );
 
   dialog.dimCompletedEvents = false;
   await settleCard(dialog);
   assert(
-    !getButtonClassAttr(extractButtonBlock(dialog._rendered, 'Dialog Past Timed')).includes('is-past'),
+    !getClassAttr(extractButtonBlock(dialog._rendered, 'Dialog Past Timed')).includes('is-past'),
     'Event dialog day list must omit is-past when dimCompletedEvents is false',
   );
   dialog.isConnected = false;
   dialog.disconnectedCallback();
-  console.log('✓ simple-calendar-month-card and ha-calendar-event-dialog tests passed.');
+  console.log('✓ simple-calendar-month-card (compact/normal/large, pills/dots, summary) & dialog tests passed.');
 }
 
-// 7. Behavioral tests for simple-calendar-event-card
+// 6. Behavioral tests for simple-calendar-focus-event-card and backward-compatible alias
 {
   const evCardFixture = [
     {
@@ -762,59 +763,61 @@ function createMockHass(eventsByEntity, lang = 'en') {
     },
   ];
 
-  const el = mountElement(registry, 'simple-calendar-event-card');
-  el.hass = createMockHass({ 'calendar.event_test': evCardFixture });
-  el.setConfig({
-    type: 'custom:simple-calendar-event-card',
-    entities: [{ entity: 'calendar.event_test' }],
-  });
-  el.isConnected = true;
-  el.connectedCallback();
-  el._anchorDate = new Date(day20Start);
-  el._currentNow = new Date(fixedNow);
-  await settleCard(el);
+  for (const tagName of ['simple-calendar-focus-event-card', 'simple-calendar-event-card']) {
+    const el = mountElement(registry, tagName);
+    el.hass = createMockHass({ [`calendar.focus_${tagName}`]: evCardFixture });
+    el.setConfig({
+      type: `custom:${tagName}`,
+      entities: [{ entity: `calendar.focus_${tagName}` }],
+    });
+    el.isConnected = true;
+    el.connectedCallback();
+    el._anchorDate = new Date(day20Start);
+    el._currentNow = new Date(fixedNow);
+    await settleCard(el);
 
-  assert(
-    getButtonClassAttr(extractButtonBlock(el._rendered, 'Prev Event')).includes('is-past'),
-    'Event card must apply is-past to previous events by default',
-  );
-  assert(
-    !getButtonClassAttr(extractButtonBlock(el._rendered, 'Now Event')).includes('is-past'),
-    'Event card must not apply is-past to current events',
-  );
-  assert(
-    !getButtonClassAttr(extractButtonBlock(el._rendered, 'Next Event')).includes('is-past'),
-    'Event card must not apply is-past to upcoming events',
-  );
+    assert(
+      getClassAttr(extractButtonBlock(el._rendered, 'Prev Event')).includes('is-past'),
+      `${tagName} must apply is-past to previous events by default`,
+    );
+    assert(
+      !getClassAttr(extractButtonBlock(el._rendered, 'Now Event')).includes('is-past'),
+      `${tagName} must not apply is-past to current events`,
+    );
+    assert(
+      !getClassAttr(extractButtonBlock(el._rendered, 'Next Event')).includes('is-past'),
+      `${tagName} must not apply is-past to upcoming events`,
+    );
 
-  el.setConfig({
-    type: 'custom:simple-calendar-event-card',
-    entities: [{ entity: 'calendar.event_test' }],
-    dim_completed_events: false,
-  });
-  await settleCard(el);
-  assert(
-    !getButtonClassAttr(extractButtonBlock(el._rendered, 'Prev Event')).includes('is-past'),
-    'Event card with dim_completed_events: false must not apply is-past to previous events',
-  );
+    el.setConfig({
+      type: `custom:${tagName}`,
+      entities: [{ entity: `calendar.focus_${tagName}` }],
+      dim_completed_events: false,
+    });
+    await settleCard(el);
+    assert(
+      !getClassAttr(extractButtonBlock(el._rendered, 'Prev Event')).includes('is-past'),
+      `${tagName} with dim_completed_events: false must not apply is-past to previous events`,
+    );
 
-  el.setConfig({
-    type: 'custom:simple-calendar-event-card',
-    entities: [{ entity: 'calendar.event_test' }],
-    show_completed_events: false,
-  });
-  await settleCard(el);
-  assert(
-    !el._rendered.includes('Prev Event'),
-    'Event card with show_completed_events: false must hide previous events',
-  );
+    el.setConfig({
+      type: `custom:${tagName}`,
+      entities: [{ entity: `calendar.focus_${tagName}` }],
+      show_completed_events: false,
+    });
+    await settleCard(el);
+    assert(
+      !el._rendered.includes('Prev Event'),
+      `${tagName} with show_completed_events: false must hide previous events`,
+    );
 
-  el.isConnected = false;
-  el.disconnectedCallback();
-  console.log('✓ simple-calendar-event-card tests passed.');
+    el.isConnected = false;
+    el.disconnectedCallback();
+  }
+  console.log('✓ simple-calendar-focus-event-card and simple-calendar-event-card alias tests passed.');
 }
 
-// 8. Behavioral tests for simple-calendar-card-editor (visibility, i18n, language resolution)
+// 7. Behavioral tests for simple-calendar-card-editor (3 card types, Month options, 10 languages)
 {
   const editor = mountElement(registry, 'simple-calendar-card-editor');
   editor.isConnected = true;
@@ -822,8 +825,8 @@ function createMockHass(eventsByEntity, lang = 'en') {
 
   for (const cardType of [
     'custom:simple-calendar-day-card',
-    'custom:simple-calendar-week-card',
     'custom:simple-calendar-month-card',
+    'custom:simple-calendar-focus-event-card',
     'custom:simple-calendar-event-card',
   ]) {
     editor.hass = createMockHass({}, 'en');
@@ -841,6 +844,28 @@ function createMockHass(eventsByEntity, lang = 'en') {
       `Editor for '${cardType}' must hide dim_completed_events option when show_completed_events is false`,
     );
   }
+
+  // Month editor options
+  editor.hass = createMockHass({}, 'en');
+  editor.setConfig({ type: 'custom:simple-calendar-month-card', entities: [] });
+  await settleCard(editor);
+  assert(
+    editor._rendered.includes(translationsObj.en.editorCalendarSize) &&
+      editor._rendered.includes(translationsObj.en.editorEventDisplay) &&
+      editor._rendered.includes(translationsObj.en.editorShowDaySummary) &&
+      editor._rendered.includes(translationsObj.en.editorShowProgressBar),
+    'Month editor must expose calendar_size, event_display, show_day_summary, and show_progress_bar',
+  );
+  editor.setConfig({
+    type: 'custom:simple-calendar-month-card',
+    entities: [],
+    show_day_summary: false,
+  });
+  await settleCard(editor);
+  assert(
+    !editor._rendered.includes(translationsObj.en.editorShowProgressBar),
+    'Month editor must hide show_progress_bar when show_day_summary is false',
+  );
 
   // Verify all 10 language labels render in the language selector
   editor.hass = createMockHass({}, 'en');
@@ -875,7 +900,7 @@ function createMockHass(eventsByEntity, lang = 'en') {
 
   editor.isConnected = false;
   editor.disconnectedCallback();
-  console.log('✓ simple-calendar-card-editor tests passed (all 4 card kinds, 10 languages, auto-detect & fallback).');
+  console.log('✓ simple-calendar-card-editor tests passed (3 cards + alias, Month options, 10 languages).');
 }
 
 console.log('--- ALL SIMPLE-CALENDARS VERIFICATION CHECKS PASSED ---');

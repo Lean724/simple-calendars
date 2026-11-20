@@ -81,26 +81,6 @@ export function getMonthGridDays(
   return days;
 }
 
-export function getWeekStart(anchorDate: Date, firstDayOfWeek: number): Date {
-  const normalizedFirstDay = ((firstDayOfWeek % 7) + 7) % 7;
-  const day = startOfDay(anchorDate);
-  const offset = (day.getDay() - normalizedFirstDay + 7) % 7;
-  return addDays(day, -offset);
-}
-
-export function getWeekDays(
-  anchorDate: Date,
-  firstDayOfWeek: number,
-  daysCount = 7,
-): Date[] {
-  const start = daysCount === 7 ? getWeekStart(anchorDate, firstDayOfWeek) : startOfDay(anchorDate);
-  const result: Date[] = [];
-  for (let i = 0; i < daysCount; i++) {
-    result.push(addDays(start, i));
-  }
-  return result;
-}
-
 export function getWeekdayLabels(firstDayOfWeek: number, locale: string): string[] {
   const normalizedFirstDay = ((firstDayOfWeek % 7) + 7) % 7;
   // 2026-11-01 is a Sunday
@@ -347,29 +327,6 @@ export function formatMonthTitle(date: Date, locale: string): string {
     year: 'numeric',
   }).format(date);
   return capitalizeFirst(formatted);
-}
-
-export function formatWeekRangeTitle(days: Date[], locale: string): string {
-  if (days.length === 0) return '';
-  const first = days[0];
-  const last = days[days.length - 1];
-  const sameMonth = first.getMonth() === last.getMonth() && first.getFullYear() === last.getFullYear();
-  const sameYear = first.getFullYear() === last.getFullYear();
-
-  if (sameMonth) {
-    const monthYear = capitalizeFirst(
-      new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }).format(first),
-    );
-    return `${first.getDate()} – ${last.getDate()} ${monthYear}`;
-  }
-  if (sameYear) {
-    const fStr = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short' }).format(first);
-    const lStr = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' }).format(last);
-    return `${fStr} – ${lStr}`;
-  }
-  const fStr = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' }).format(first);
-  const lStr = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' }).format(last);
-  return `${fStr} – ${lStr}`;
 }
 
 export function formatDayTitle(date: Date, locale: string): string {

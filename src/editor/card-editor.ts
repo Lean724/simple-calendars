@@ -5,10 +5,9 @@ import {
   DEFAULT_CALENDAR_COLORS,
   DEFAULT_ICON,
   EDITOR_TAG,
-  EVENT_CARD_TYPE,
+  FOCUS_EVENT_CARD_TYPE,
   LANGUAGE_LABELS,
   TRANSLATIONS,
-  WEEK_CARD_TYPE,
   resolveLanguage,
   type TranslationStrings,
 } from '../constants';
@@ -17,11 +16,12 @@ import type {
   AnyCalendarCardConfig,
   CalendarEntityConfig,
   DayCardConfig,
-  EventCardConfig,
+  FocusEventCardConfig,
   HomeAssistant,
+  MonthCalendarSize,
   MonthCardConfig,
+  MonthEventDisplay,
   SupportedLanguage,
-  WeekCardConfig,
 } from '../types';
 
 @customElement(EDITOR_TAG)
@@ -126,10 +126,11 @@ export class HaCalendarCardEditor extends LitElement {
     this._updateEntities(list);
   }
 
-  private _getCardKind(): 'month' | 'week' | 'day' | 'event' {
+  private _getCardKind(): 'month' | 'day' | 'focus-event' {
     const type = (this._config?.type || '').toLowerCase();
-    if (type.includes(EVENT_CARD_TYPE) || type.includes('event')) return 'event';
-    if (type.includes(WEEK_CARD_TYPE) || type.includes('week')) return 'week';
+    if (type.includes(FOCUS_EVENT_CARD_TYPE) || type.includes('event')) {
+      return 'focus-event';
+    }
     if (type.includes(DAY_CARD_TYPE) || type.includes('day')) return 'day';
     return 'month';
   }
@@ -305,7 +306,7 @@ export class HaCalendarCardEditor extends LitElement {
           </div>
 
           <div class="toggles-list">
-            ${kind === 'event'
+            ${kind === 'focus-event'
               ? html`
                   <label class="checkbox-row">
                     <input
@@ -494,7 +495,7 @@ export class HaCalendarCardEditor extends LitElement {
           <div class="section-title">${strings.editorViewSection}</div>
 
           <div class="toggles-list">
-            ${kind !== 'event'
+            ${kind !== 'focus-event'
               ? html`
                   <label class="checkbox-row">
                     <input
@@ -586,11 +587,9 @@ export class HaCalendarCardEditor extends LitElement {
 
           ${kind === 'month'
             ? this._renderMonthOptions(this._config as MonthCardConfig, strings)
-            : kind === 'week'
-              ? this._renderWeekOptions(this._config as WeekCardConfig, strings)
-              : kind === 'event'
-                ? this._renderEventOptions(this._config as EventCardConfig, strings)
-                : this._renderDayOptions(this._config as DayCardConfig, strings)}
+            : kind === 'focus-event'
+              ? this._renderFocusEventOptions(this._config as FocusEventCardConfig, strings)
+              : this._renderDayOptions(this._config as DayCardConfig, strings)}
         </div>
 
         <!-- Multi-entity Section -->
@@ -713,18 +712,73 @@ export class HaCalendarCardEditor extends LitElement {
     cfg: MonthCardConfig,
     strings: TranslationStrings,
   ) {
+    const currentSize: MonthCalendarSize =
+      cfg.calendar_size || (cfg.compact === true ? 'compact' : 'normal');
+    const currentDisplay: MonthEventDisplay =
+      cfg.event_display === 'dots' ? 'dots' : 'pills';
+    const defaultMax =
+      currentDisplay === 'dots' ? 4 : currentSize === 'compact' ? 2 : 3;
+
     return html`
+      <div class="two-col">
+        <div class="field">
+          <label>${strings.editorCalendarSize}</label>
+          <select
+            .value=${currentSize}
+            @change=${(e: Event) => {
+              const size = (e.target as HTMLSelectElement).value as MonthCalendarSize;
+              if (!this._config) return;
+              const next: Record<string, unknown> = {
+                ...this._config,
+                calendar_size: size,
+              };
+              delete next.compact;
+              this._emitConfig(next as unknown as AnyCalendarCardConfig);
+            }}
+          >
+            <option value="compact" ?selected=${currentSize === 'compact'}>
+              ${strings.editorSizeCompact}
+            </option>
+            <option value="normal" ?selected=${currentSize === 'normal'}>
+              ${strings.editorSizeNormal}
+            </option>
+            <option value="large" ?selected=${currentSize === 'large'}>
+              ${strings.editorSizeLarge}
+            </option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>${strings.editorEventDisplay}</label>
+          <select
+            .value=${currentDisplay}
+            @change=${(e: Event) =>
+              this._updateField(
+                'event_display',
+                (e.target as HTMLSelectElement).value as MonthEventDisplay,
+              )}
+          >
+            <option value="pills" ?selected=${currentDisplay === 'pills'}>
+              ${strings.editorDisplayPills}
+            </option>
+            <option value="dots" ?selected=${currentDisplay === 'dots'}>
+              ${strings.editorDisplayDots}
+            </option>
+          </select>
+        </div>
+      </div>
+
       <div class="field">
         <label>${strings.editorMaxEvents}</label>
         <input
           type="number"
           min="1"
           max="12"
-          .value=${String(cfg.max_events_per_day ?? 3)}
+          .value=${String(cfg.max_events_per_day ?? defaultMax)}
           @change=${(e: Event) =>
             this._updateField(
               'max_events_per_day',
-              Math.max(1, Number((e.target as HTMLInputElement).value) || 3),
+              Math.max(1, Number((e.target as HTMLInputElement).value) || defaultMax),
             )}
         />
       </div>
@@ -746,78 +800,32 @@ export class HaCalendarCardEditor extends LitElement {
         <label class="checkbox-row">
           <input
             type="checkbox"
-            .checked=${cfg.compact !== false}
+            .checked=${cfg.show_day_summary !== false}
             @change=${(e: Event) =>
               this._updateField(
-                'compact',
+                'show_day_summary',
                 (e.target as HTMLInputElement).checked,
               )}
           />
-          <span>${strings.editorCompact}</span>
-        </label>
-      </div>
-    `;
-  }
-
-  private _renderWeekOptions(
-    cfg: WeekCardConfig,
-    strings: TranslationStrings,
-  ) {
-    return html`
-      <div class="field">
-        <label>${strings.editorDaysToShow}</label>
-        <input
-          type="number"
-          min="1"
-          max="14"
-          .value=${String(cfg.days_to_show ?? 7)}
-          @change=${(e: Event) =>
-            this._updateField(
-              'days_to_show',
-              Math.max(1, Math.min(14, Number((e.target as HTMLInputElement).value) || 7)),
-            )}
-        />
-      </div>
-
-      <div class="toggles-list">
-        <label class="checkbox-row">
-          <input
-            type="checkbox"
-            .checked=${cfg.show_week_number !== false}
-            @change=${(e: Event) =>
-              this._updateField(
-                'show_week_number',
-                (e.target as HTMLInputElement).checked,
-              )}
-          />
-          <span>${strings.editorShowWeekNumber}</span>
+          <span>${strings.editorShowDaySummary}</span>
         </label>
 
-        <label class="checkbox-row">
-          <input
-            type="checkbox"
-            .checked=${cfg.show_progress_bar !== false}
-            @change=${(e: Event) =>
-              this._updateField(
-                'show_progress_bar',
-                (e.target as HTMLInputElement).checked,
-              )}
-          />
-          <span>${strings.editorShowProgressBar}</span>
-        </label>
-
-        <label class="checkbox-row">
-          <input
-            type="checkbox"
-            .checked=${Boolean(cfg.show_empty_days)}
-            @change=${(e: Event) =>
-              this._updateField(
-                'show_empty_days',
-                (e.target as HTMLInputElement).checked,
-              )}
-          />
-          <span>${strings.editorShowEmptyDays}</span>
-        </label>
+        ${cfg.show_day_summary !== false
+          ? html`
+              <label class="checkbox-row sub-option">
+                <input
+                  type="checkbox"
+                  .checked=${cfg.show_progress_bar !== false}
+                  @change=${(e: Event) =>
+                    this._updateField(
+                      'show_progress_bar',
+                      (e.target as HTMLInputElement).checked,
+                    )}
+                />
+                <span>${strings.editorShowProgressBar}</span>
+              </label>
+            `
+          : nothing}
       </div>
     `;
   }
@@ -857,8 +865,8 @@ export class HaCalendarCardEditor extends LitElement {
     `;
   }
 
-  private _renderEventOptions(
-    cfg: EventCardConfig,
+  private _renderFocusEventOptions(
+    cfg: FocusEventCardConfig,
     strings: TranslationStrings,
   ) {
     return html`

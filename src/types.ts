@@ -111,17 +111,17 @@ export interface BaseCalendarCardConfig {
   border_radius?: number;
 }
 
+export type MonthCalendarSize = 'compact' | 'normal' | 'large';
+export type MonthEventDisplay = 'pills' | 'dots';
+
 export interface MonthCardConfig extends BaseCalendarCardConfig {
+  calendar_size?: MonthCalendarSize;
+  event_display?: MonthEventDisplay;
   max_events_per_day?: number;
   show_week_numbers?: boolean;
-  compact?: boolean;
-}
-
-export interface WeekCardConfig extends BaseCalendarCardConfig {
-  show_week_number?: boolean;
+  show_day_summary?: boolean;
   show_progress_bar?: boolean;
-  show_empty_days?: boolean;
-  days_to_show?: number;
+  compact?: boolean;
 }
 
 export interface DayCardConfig extends BaseCalendarCardConfig {
@@ -129,17 +129,18 @@ export interface DayCardConfig extends BaseCalendarCardConfig {
   show_progress_bar?: boolean;
 }
 
-export interface EventCardConfig extends BaseCalendarCardConfig {
+export interface FocusEventCardConfig extends BaseCalendarCardConfig {
   max_previous_events?: number;
   max_upcoming_events?: number;
   show_progress_bar?: boolean;
 }
 
+export type EventCardConfig = FocusEventCardConfig;
+
 export type AnyCalendarCardConfig =
   | MonthCardConfig
-  | WeekCardConfig
   | DayCardConfig
-  | EventCardConfig;
+  | FocusEventCardConfig;
 
 export interface MonthGridDay {
   date: Date;

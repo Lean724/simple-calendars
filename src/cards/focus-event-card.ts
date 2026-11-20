@@ -1,13 +1,13 @@
 import { css, html, nothing } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import {
-  EVENT_CARD_TYPE,
+  FOCUS_EVENT_CARD_TYPE,
   type TranslationStrings,
 } from '../constants';
 import { sharedCardStyles } from '../styles/shared-styles';
 import type {
   CalendarEvent,
-  EventCardConfig,
+  FocusEventCardConfig,
   HomeAssistant,
   NormalizedCalendarEntity,
   SupportedLanguage,
@@ -23,18 +23,19 @@ import {
 } from '../utils/date-utils';
 import { BaseCalendarCard, buildStubEntities } from './base-card';
 
-@customElement(EVENT_CARD_TYPE)
-export class HaCalendarEventCard extends BaseCalendarCard<EventCardConfig> {
-  public static getStubConfig(hass?: HomeAssistant): EventCardConfig {
+@customElement(FOCUS_EVENT_CARD_TYPE)
+export class HaCalendarFocusEventCard extends BaseCalendarCard<FocusEventCardConfig> {
+  public static getStubConfig(hass?: HomeAssistant): FocusEventCardConfig {
     return {
-      type: `custom:${EVENT_CARD_TYPE}`,
-      title: 'Agenda actual',
+      type: `custom:${FOCUS_EVENT_CARD_TYPE}`,
+      title: 'Focus Agenda',
       entities: buildStubEntities(hass),
       max_previous_events: 2,
       max_upcoming_events: 2,
       show_all_day_events: true,
       all_day_position: 'top',
       show_completed_events: true,
+      dim_completed_events: true,
       show_progress_bar: true,
       show_entity_toggles: false,
       transparent: false,
@@ -464,7 +465,8 @@ export class HaCalendarEventCard extends BaseCalendarCard<EventCardConfig> {
         opacity: 0.8;
       }
 
-      .evcard-row.is-past .evcard-ev-summary {
+      .evcard-row.is-past .evcard-ev-summary,
+      .evcard-row.is-past .evcard-ev-time {
         text-decoration: line-through;
         color: var(--cal-text-secondary);
       }
@@ -534,6 +536,6 @@ export class HaCalendarEventCard extends BaseCalendarCard<EventCardConfig> {
 
 declare global {
   interface HTMLElementTagNameMap {
-    [EVENT_CARD_TYPE]: HaCalendarEventCard;
+    [FOCUS_EVENT_CARD_TYPE]: HaCalendarFocusEventCard;
   }
 }

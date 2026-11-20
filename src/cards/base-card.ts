@@ -194,6 +194,10 @@ export abstract class BaseCalendarCard<
     return false;
   }
 
+  protected isCompactHeader(): boolean {
+    return false;
+  }
+
   protected shouldDimCompletedEvents(): boolean {
     return this._config?.dim_completed_events !== false;
   }
@@ -236,6 +240,9 @@ export abstract class BaseCalendarCard<
       dayEvents,
       this.getDayFilterOptions(),
     );
+    const emptyText = isSameDay(dayDate, this._currentNow)
+      ? strings.noEvents
+      : strings.noEventsDay;
 
     return html`
       <div class="min-day-row">
@@ -250,7 +257,7 @@ export abstract class BaseCalendarCard<
 
         <div class="min-events-col">
           ${filteredEvents.length === 0
-            ? html`<div class="min-empty-text">${strings.noEvents}</div>`
+            ? html`<div class="min-empty-text">${emptyText}</div>`
             : filteredEvents.map((ev) => {
                 const progress = getEventProgressInfo(
                   ev,
@@ -438,6 +445,7 @@ export abstract class BaseCalendarCard<
                 .hiddenEntities=${this._hiddenEntities}
                 .showEntityToggles=${showToggles}
                 .loading=${this._loading}
+                .compact=${this.isCompactHeader()}
                 .strings=${strings}
                 @cal-prev=${() => this.navigatePrev()}
                 @cal-today=${() => this.navigateToday()}
