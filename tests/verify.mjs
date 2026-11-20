@@ -23,10 +23,10 @@ assert(
   'dist/simple-calendars.js and root simple-calendars.js must be identical',
 );
 assert(
-  distBytes.toString('utf8').includes('2.0.0'),
-  'Compiled bundle must contain v2.0.0 version marker',
+  distBytes.toString('utf8').includes('2.0.1'),
+  'Compiled bundle must contain v2.0.1 version marker',
 );
-console.log('✓ Compiled bundle exists in dist/ and root, matches byte-for-byte, and reports v2.0.0.');
+console.log('✓ Compiled bundle exists in dist/ and root, matches byte-for-byte, and reports v2.0.1.');
 
 // 2. Verify 10-language i18n parity in src/constants.ts and src/utils/date-utils.ts
 const expectedLangs = ['en', 'es', 'zh-Hans', 'de', 'it', 'fr', 'pt', 'ru', 'pl', 'nl'];

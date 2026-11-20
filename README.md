@@ -2,7 +2,14 @@
 
 A suite of **3 minimalist Home Assistant Lovelace calendar cards** — Monthly, Daily, and Focus Event. Designed with clean typography, scalable layouts for `4x12` and larger Sections slots, native multi-entity `calendar.*` support, frosted glass transparency controls, automatic midnight day rollover, built-in translations in **10 languages**, and a full visual editor.
 
-![Simple-Calendars Daily Minimalist Card Preview](docs/preview-day.svg)
+<p align="center">
+  <img src="docs/preview-daily.jpg" alt="Simple-Calendars Daily Card - Completed Events Dimmed & Live Progress" width="48%" />
+  <img src="docs/preview-month.jpg" alt="Simple-Calendars Monthly Card - Scalable 4x12 Grid with Dots & Bottom Summary" width="48%" />
+</p>
+
+<p align="center">
+  <img src="docs/preview-focus-event-editor.png" alt="Simple-Calendars Visual Configuration Editor & Focus Event Preview" width="100%" />
+</p>
 
 Compatible with **Home Assistant Marketplace** (**HACS**) and both **Sections** and **Masonry** dashboard views.
 

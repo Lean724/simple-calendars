@@ -1,4 +1,4 @@
-const $t = "2.0.0", be = "simple-calendar-month-card", de = "simple-calendar-day-card", Z = "simple-calendar-focus-event-card", ct = "simple-calendar-card-editor", We = "ha-calendar-month-card", Ge = "ha-calendar-day-card", Ke = "simple-calendar-event-card", Ve = "ha-calendar-event-card", A = [
+const $t = "2.0.1", be = "simple-calendar-month-card", de = "simple-calendar-day-card", Z = "simple-calendar-focus-event-card", ct = "simple-calendar-card-editor", We = "ha-calendar-month-card", Ge = "ha-calendar-day-card", Ke = "simple-calendar-event-card", Ve = "ha-calendar-event-card", A = [
   "#1a73e8",
   "#e67c73",
   "#33b679",

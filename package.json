@@ -1,6 +1,6 @@
 {
   "name": "simple-calendars",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Multi-entity Monthly, Daily, and Focus Event Lovelace calendar cards for Home Assistant",
   "type": "module",
   "main": "dist/simple-calendars.js",
