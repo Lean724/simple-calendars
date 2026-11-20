@@ -56,6 +56,10 @@ export class HaCalendarDayCard extends BaseCalendarCard<DayCardConfig> {
     return true;
   }
 
+  protected override autoFollowToday(): boolean {
+    return !this._config?.show_navigation;
+  }
+
   protected getFetchRange(): { start: Date; end: Date } {
     return {
       start: startOfDay(this._anchorDate),

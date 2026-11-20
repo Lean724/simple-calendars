@@ -1,121 +1,124 @@
 # Simple-Calendars (Month, Week, Day & Event)
 
-Suite de **4 Home Assistant calendar cards para Lovelace**: calendario mensual, semanal, diario y tarjeta de eventos. Ofrece diseño minimalista, soporte nativo para múltiples entidades `calendar.*`, transparencias, traducciones en 7 idiomas y editor visual completo.
+A suite of **4 minimalist Home Assistant Lovelace calendar cards** — Monthly, Weekly, Daily, and Event Card. Designed with clean typography, native multi-entity `calendar.*` support, frosted glass transparency controls, automatic midnight day rollover, built-in translations in **10 languages**, and a full visual editor.
 
 ![Simple-Calendars Daily Minimalist Card Preview](docs/preview-day.svg)
 
-Compatible con **Home Assistant Marketplace** (anteriormente **HACS**) y con vistas **Sections** y **Masonry**.
+Compatible with **Home Assistant Marketplace** (**HACS**) and both **Sections** and **Masonry** dashboard views.
 
-## Tarjetas incluidas
+## Included Cards
 
-| Tarjeta | Tipo YAML | Descripción |
+| Card | YAML Type | Description |
 | :--- | :--- | :--- |
-| **Event Card** | `custom:simple-calendar-event-card` | Tarjeta compacta orientada al momento actual: muestra **Eventos previos**, **Eventos actuales** (con barra de progreso) y **Eventos próximos**, con barra de título y múltiples calendarios. |
-| **Calendario Diario** | `custom:simple-calendar-day-card` | Widget minimalista con píldora de semana (`Semana 47`), resumen del día, tiempo restante y barra de progreso en tiempo real. |
-| **Calendario Semanal** | `custom:simple-calendar-week-card` | Resumen minimalista semanal por días con píldora de semana, horarios y barras de progreso. |
-| **Calendario Mensual** | `custom:simple-calendar-month-card` | Grilla mensual limpia con píldoras por color y resumen minimalista inferior del día seleccionado. |
+| **Event Card** | `custom:simple-calendar-event-card` | Compact now/next tracker displaying **Previous events**, **Current events** (with live progress bar), and **Upcoming events**, plus optional title bar and calendar filters. |
+| **Daily Calendar** | `custom:simple-calendar-day-card` | Minimalist daily agenda widget with week pill (`Week 47`), day summary, remaining time, and real-time progress bar. |
+| **Weekly Calendar** | `custom:simple-calendar-week-card` | Minimalist multi-day weekly agenda with week pill, schedule times, and progress bars. |
+| **Monthly Calendar** | `custom:simple-calendar-month-card` | Clean monthly grid with color-coded event pills and a minimalist focused-day summary below. |
 
-> *(Nota: para máxima retrocompatibilidad también se aceptan los alias `custom:ha-calendar-month-card`, `custom:ha-calendar-week-card`, `custom:ha-calendar-day-card` y `custom:ha-calendar-event-card`).*
+> *(Note: Legacy aliases `custom:ha-calendar-month-card`, `custom:ha-calendar-week-card`, `custom:ha-calendar-day-card`, and `custom:ha-calendar-event-card` remain supported for backward compatibility.)*
 
-## Características principales
+## Key Features
 
-- **Seguimiento en tiempo real (`Event Card`)**: visualiza de un vistazo qué acaba de terminar, qué está ocurriendo ahora mismo con barra de progreso y qué viene después.
-- **Opciones avanzadas de visualización**: mostrar/ocultar el día actual (`show_current_day`), mostrar/ocultar eventos de todo el día (`show_all_day_events`) y ubicarlos arriba o abajo (`all_day_position`), mostrar/ocultar eventos ya terminados (`show_completed_events`) y mensaje `"Sin eventos hoy"` cuando no hay actividad.
-- **Multi-entidad sin límites**: combina cualquier cantidad de entidades `calendar.*` en una misma tarjeta.
-- **Transparencias y efecto cristal (*frosted glass*)**: configura `transparent: true`, `background_opacity` (`0–100%`), `backdrop_blur`, `background_color`, `border_radius`, `hide_border` y `hide_shadow`.
-- **Editor visual completo**: configura todas las opciones, colores, íconos y entidades directamente desde la interfaz de Lovelace sin escribir YAML.
-- **7 idiomas integrados**: Español (`es`), Chino Simplificado (`zh-Hans`), Alemán (`de`), Inglés (`en`), Portugués (`pt`), Italiano (`it`) y Francés (`fr`), con detección automática desde Home Assistant.
+- **Real-time event tracking & past-event dimming**: Finished timed events and past all-day events are automatically dimmed, grayed out, and struck through across **Daily**, **Weekly**, **Monthly** (grid pills, focused summary, and day dialog), and **Event Card** (`dim_completed_events: true` by default), or hidden completely with `show_completed_events: false`.
+- **Automatic midnight rollover**: Cards anchored to today automatically advance at midnight while respecting manual navigation when `show_navigation: true`.
+- **Advanced display options**: Toggle the current day highlight/column (`show_current_day`), toggle all-day events (`show_all_day_events`), place all-day events at the top or bottom (`all_day_position`), and show a clean empty-day message when no events are scheduled.
+- **Unlimited multi-entity calendars**: Combine any number of `calendar.*` entities into a single card with custom names, MDI icons, and colors.
+- **Transparency & frosted glass**: Configure `transparent: true`, `background_opacity` (`0–100%`), `backdrop_blur`, `background_color`, `border_radius`, `hide_border`, and `hide_shadow`.
+- **Full visual editor**: Configure every option, entity, color, and icon directly from the Lovelace UI without editing YAML.
+- **10 built-in languages**: English (`en`), Spanish (`es`), Simplified Chinese (`zh-Hans`), German (`de`), Italian (`it`), French (`fr`), Portuguese (`pt`), Russian (`ru`), Polish (`pl`), and Dutch (`nl`), with automatic detection from Home Assistant.
 
 ---
 
-## Instalación
+## Installation
 
-### Mediante Marketplace / HACS (Recomendado)
+### Via HACS / Home Assistant Marketplace (Recommended)
 
-1. Abre **Marketplace** (antes **HACS**) en Home Assistant.
-2. Ve a **Frontend** → menú superior derecho **⋮** → **Repositorios personalizados** (*Custom repositories*).
-3. Agrega `https://github.com/Lean724/simple-calendars` con categoría **Lovelace** / **Dashboard**.
-4. Busca **Simple-Calendars (Month, Week, Day & Event)** e instálalo.
-5. Recarga el navegador cuando Home Assistant lo solicite.
+1. Open **HACS** (or **Home Assistant Marketplace**) in Home Assistant.
+2. Go to **Frontend** and search for **Simple-Calendars (Month, Week, Day & Event)**.
+   - If the repository is not yet in the default catalog, open the top-right **⋮** menu → **Custom repositories**, add `https://github.com/Lean724/simple-calendars` with category **Dashboard** / **Lovelace**, and then search for it.
+3. Click **Download** / **Install**.
+4. Reload your browser when prompted by Home Assistant.
 
-### Instalación manual
+### Manual Installation
 
-1. Descarga `simple-calendars.js` desde los *Releases* o desde `dist/simple-calendars.js`.
-2. Cópialo en `/config/www/simple-calendars.js`.
-3. En Home Assistant ve a **Ajustes → Dashboards → ⋮ → Recursos** y añade:
+1. Download `simple-calendars.js` from Releases or from `dist/simple-calendars.js`.
+2. Copy it to `/config/www/simple-calendars.js`.
+3. In Home Assistant go to **Settings → Dashboards → ⋮ → Resources** and add:
    - URL: `/local/simple-calendars.js`
-   - Tipo: **Módulo JavaScript**
+   - Resource type: **JavaScript Module**
 
 ---
 
-## Configuración
+## Configuration
 
-### Configuración compartida de entidades (`entities`)
+### Shared Entity Configuration (`entities`)
 
-| Opción | Tipo | Por defecto | Descripción |
+| Option | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `entity` | `string` | **Requerido** | ID de la entidad de calendario (`calendar.*`). |
-| `name` | `string` | `friendly_name` | Nombre mostrado en filtros y modales. |
-| `color` | `string` | Automático | Color hexadecimal o CSS (ej. `#1a73e8`). |
-| `icon` | `string` | `mdi:calendar` | Ícono MDI para el calendario y sus eventos. |
-| `hidden` | `boolean` | `false` | Inicia oculto en el filtro rápido. |
+| `entity` | `string` | **Required** | Calendar entity ID (`calendar.*`). |
+| `name` | `string` | `friendly_name` | Custom name shown in filters and dialogs. |
+| `color` | `string` | Auto | Hex or CSS color (e.g. `#1a73e8`). |
+| `icon` | `string` | `mdi:calendar` | MDI icon for the calendar and its events. |
+| `hidden` | `boolean` | `false` | Starts hidden in quick entity toggles. |
 
-### Opciones comunes, Visibilidad y Transparencia
+### Common, Visibility & Appearance Options
 
-| Opción | Tipo | Por defecto | Descripción |
+| Option | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `title` | `string` | — | Título mostrado en la barra superior de Event Card y Month Card. |
-| `entities` | `list` | **Requerido** | Lista de entidades de calendario (`calendar.*`). |
-| `first_day_of_week` | `number` | `1` | `1` para Lunes, `0` para Domingo. |
-| `language` | `string` | Automático | `'es'`, `'zh-Hans'`, `'de'`, `'en'`, `'pt'`, `'it'`, `'fr'`. |
-| `show_current_day` | `boolean` | `true` | Muestra u oculta la columna/resaltado del día actual. |
-| `show_all_day_events` | `boolean` | `true` | Muestra u oculta los eventos de todo el día. |
-| `all_day_position` | `'top' \| 'bottom'` | `'top'` | Posición de los eventos de todo el día (arriba o abajo). |
-| `show_completed_events` | `boolean` | `true` | Muestra u oculta los eventos ya finalizados. |
-| `transparent` | `boolean` | `false` | Fondo 100% transparente sin bordes ni sombras. |
-| `background_opacity` | `number` | `100` | Opacidad del fondo de la tarjeta (`0` a `100`). |
-| `background_color` | `string` | Tema HA | Color base personalizado para el fondo. |
-| `backdrop_blur` | `number` | `0` | Desenfoque de fondo en `px` (`12` automático si `background_opacity < 100`). |
-| `border_radius` | `number` | `24` | Radio de las esquinas de la tarjeta en `px`. |
-| `hide_border` | `boolean` | `false` | Oculta el borde exterior de la tarjeta. |
-| `hide_shadow` | `boolean` | `false` | Oculta la sombra de la tarjeta. |
-| `use_entity_color` | `boolean` | `false` | Colorea ícono y barra de progreso con el color del calendario. |
+| `title` | `string` | — | Title displayed in the top bar of Event Card and Month Card. |
+| `entities` | `list` | **Required** | List of calendar entities (`calendar.*`). |
+| `first_day_of_week` | `number` | `1` | `1` for Monday, `0` for Sunday. |
+| `language` | `string` | Auto | `'en'`, `'es'`, `'zh-Hans'`, `'de'`, `'it'`, `'fr'`, `'pt'`, `'ru'`, `'pl'`, `'nl'`. |
+| `show_current_day` | `boolean` | `true` | Shows or hides the current day column/highlight. |
+| `show_all_day_events` | `boolean` | `true` | Shows or hides all-day events. |
+| `all_day_position` | `'top' \| 'bottom'` | `'top'` | Places all-day events at the top or bottom of the day list. |
+| `show_completed_events` | `boolean` | `true` | Shows or hides already finished events. |
+| `dim_completed_events` | `boolean` | `true` | Dims, grays out, and strikes through finished events when visible across Day, Week, Month, and Event cards. |
+| `transparent` | `boolean` | `false` | 100% transparent background with no borders or shadows. |
+| `background_opacity` | `number` | `100` | Card background opacity (`0` to `100`). |
+| `background_color` | `string` | HA theme | Custom base background color. |
+| `backdrop_blur` | `number` | `0` | Background blur in `px` (defaults to `12` when `background_opacity < 100`). |
+| `border_radius` | `number` | `24` | Card corner radius in `px`. |
+| `hide_border` | `boolean` | `false` | Hides the outer card border. |
+| `hide_shadow` | `boolean` | `false` | Hides the card drop shadow. |
+| `use_entity_color` | `boolean` | `false` | Tints event icon and progress bar using the entity's color. |
 
-### Opciones de `Event Card` (`custom:simple-calendar-event-card`)
+### `Event Card` Options (`custom:simple-calendar-event-card`)
 
-| Opción | Tipo | Por defecto | Descripción |
+| Option | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `max_previous_events` | `number` | `2` | Cantidad máxima de eventos previos a mostrar (`0` oculta la sección). |
-| `max_upcoming_events` | `number` | `2` | Cantidad máxima de eventos próximos a mostrar (`0` oculta la sección). |
-| `show_progress_bar` | `boolean` | `true` | Muestra la barra de progreso en los eventos actuales. |
-| `show_entity_toggles` | `boolean` | `false` | Muestra filtros rápidos por calendario en la barra de título. |
+| `max_previous_events` | `number` | `2` | Maximum number of previous events shown (`0` hides the section). |
+| `max_upcoming_events` | `number` | `2` | Maximum number of upcoming events shown (`0` hides the section). |
+| `show_progress_bar` | `boolean` | `true` | Shows the live progress bar on ongoing events. |
+| `show_entity_toggles` | `boolean` | `false` | Shows quick calendar filter chips in the title bar. |
 
 ```yaml
 type: custom:simple-calendar-event-card
-title: Agenda del momento
+title: Current Agenda
 max_previous_events: 3
 max_upcoming_events: 2
 show_all_day_events: true
 all_day_position: top
 show_completed_events: true
+dim_completed_events: true
 background_opacity: 85
 backdrop_blur: 12
 entities:
-  - entity: calendar.trabajo
-    name: Trabajo
+  - entity: calendar.work
+    name: Work
     icon: mdi:briefcase
   - entity: calendar.personal
     name: Personal
     icon: mdi:account
 ```
 
-### Opciones de la tarjeta Diaria (`custom:simple-calendar-day-card`)
+### Daily Card Options (`custom:simple-calendar-day-card`)
 
-| Opción | Tipo | Por defecto | Descripción |
+| Option | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `show_week_number` | `boolean` | `true` | Muestra la píldora `Semana XX` arriba a la izquierda. |
-| `show_progress_bar` | `boolean` | `true` | Muestra la barra de progreso y tiempo restante/duración. |
-| `show_navigation` | `boolean` | `false` | Muestra flechas compactas `< Hoy >`. |
+| `show_week_number` | `boolean` | `true` | Shows the `Week XX` pill in the top-left corner. |
+| `show_progress_bar` | `boolean` | `true` | Shows the progress bar and remaining time / duration. |
+| `show_navigation` | `boolean` | `false` | Shows compact `< Today >` navigation controls. |
 
 ```yaml
 type: custom:simple-calendar-day-card
@@ -125,42 +128,44 @@ show_current_day: true
 show_all_day_events: true
 all_day_position: top
 show_completed_events: true
+dim_completed_events: true
 entities:
-  - entity: calendar.fer_trabajo
-    name: Fer trabajo
+  - entity: calendar.work
+    name: Work
     icon: mdi:briefcase
-  - entity: calendar.casa
-    name: Casa
+  - entity: calendar.home
+    name: Home
     icon: mdi:home
 ```
 
-### Opciones de la tarjeta Semanal (`custom:simple-calendar-week-card`)
+### Weekly Card Options (`custom:simple-calendar-week-card`)
 
-| Opción | Tipo | Por defecto | Descripción |
+| Option | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `days_to_show` | `number` | `7` | Cantidad de días a mostrar (`1`–`14`). |
-| `show_week_number` | `boolean` | `true` | Muestra la píldora de semana. |
-| `show_progress_bar` | `boolean` | `true` | Muestra la barra de progreso por evento. |
-| `show_empty_days` | `boolean` | `false` | Incluye días sin eventos en el resumen semanal. |
-| `show_navigation` | `boolean` | `false` | Muestra flechas compactas `< Hoy >`. |
+| `days_to_show` | `number` | `7` | Number of days to display (`1`–`14`). |
+| `show_week_number` | `boolean` | `true` | Shows the week pill. |
+| `show_progress_bar` | `boolean` | `true` | Shows the per-event progress bar. |
+| `show_empty_days` | `boolean` | `false` | Includes days with no events in the weekly summary. |
+| `show_navigation` | `boolean` | `false` | Shows compact `< Today >` navigation controls. |
 
-### Opciones de la tarjeta Mensual (`custom:simple-calendar-month-card`)
+### Monthly Card Options (`custom:simple-calendar-month-card`)
 
-| Opción | Tipo | Por defecto | Descripción |
+| Option | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `max_events_per_day` | `number` | `3` | Cantidad máxima de eventos visibles por celda antes de mostrar `+N más`. |
-| `show_week_numbers` | `boolean` | `false` | Muestra la columna izquierda con el número de semana ISO. |
-| `compact` | `boolean` | `true` | Celda compacta de altura ajustada. |
-| `show_header` | `boolean` | `true` | Muestra la barra de navegación del mes. |
-| `show_entity_toggles` | `boolean` | `false` | Muestra chips interactivos para filtrar calendarios. |
+| `max_events_per_day` | `number` | `3` | Maximum visible events per cell before showing `+N more`. |
+| `show_week_numbers` | `boolean` | `false` | Shows the left ISO week number column. |
+| `compact` | `boolean` | `true` | Compact cell height. |
+| `show_header` | `boolean` | `true` | Shows the month navigation header. |
+| `show_entity_toggles` | `boolean` | `false` | Shows interactive chips to filter calendars. |
 
 ---
 
-## Desarrollo
+## Development
 
 ```bash
-npm install
+npm ci
 npm run build
+npm test
 ```
 
-El bundle compilado listo para distribución se genera en `dist/simple-calendars.js` y `simple-calendars.js`.
+The compiled bundle ready for distribution is generated in `dist/simple-calendars.js` and `simple-calendars.js`.

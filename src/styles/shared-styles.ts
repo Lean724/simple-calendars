@@ -347,11 +347,40 @@ export const sharedCardStyles = css`
     gap: 4px;
     cursor: pointer;
     border-radius: 8px;
-    transition: opacity 0.15s ease;
+    transition: opacity 0.15s ease, filter 0.15s ease;
   }
 
   .min-event-item:hover {
     opacity: 0.86;
+  }
+
+  .min-event-item.is-past {
+    opacity: 0.48;
+    filter: grayscale(1);
+  }
+
+  .min-event-item.is-past:hover {
+    opacity: 0.78;
+  }
+
+  .min-event-item.is-past .min-event-title {
+    text-decoration: line-through;
+    text-decoration-thickness: 1.5px;
+    color: var(--cal-text-secondary);
+  }
+
+  .min-event-item.is-past .min-event-icon,
+  .min-event-item.is-past .min-event-time,
+  .min-event-item.is-past .min-event-duration {
+    color: var(--cal-text-secondary);
+  }
+
+  .min-event-item.is-past .min-progress-track {
+    background: color-mix(in srgb, var(--cal-text-secondary) 22%, transparent);
+  }
+
+  .min-event-item.is-past .min-progress-fill {
+    background: var(--cal-text-secondary);
   }
 
   .min-event-top {

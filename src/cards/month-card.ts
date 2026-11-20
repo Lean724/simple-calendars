@@ -21,6 +21,7 @@ import {
   getEventsForDay,
   getMonthGridDays,
   getWeekdayLabels,
+  isEventPast,
   isSameDay,
   startOfDay,
 } from '../utils/date-utils';
@@ -93,6 +94,21 @@ export class HaCalendarMonthCard extends BaseCalendarCard<MonthCardConfig> {
     this._focusedDay = startOfDay(now);
   }
 
+  protected override handleDayRollover(prevNow: Date, now: Date): void {
+    if (isSameDay(prevNow, now)) return;
+    if (isSameDay(this._focusedDay, prevNow)) {
+      this._focusedDay = startOfDay(now);
+    }
+    if (
+      this._anchorDate.getFullYear() === prevNow.getFullYear() &&
+      this._anchorDate.getMonth() === prevNow.getMonth() &&
+      (now.getFullYear() !== prevNow.getFullYear() ||
+        now.getMonth() !== prevNow.getMonth())
+    ) {
+      this._anchorDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+    }
+  }
+
   private _getGridDays(): MonthGridDay[] {
     return getMonthGridDays(
       this._anchorDate.getFullYear(),
@@ -122,6 +138,7 @@ export class HaCalendarMonthCard extends BaseCalendarCard<MonthCardConfig> {
     const compact = this._config.compact !== false;
     const maxEvents = Math.max(1, this._config.max_events_per_day ?? 3);
     const showCurrentDay = this._config.show_current_day !== false;
+    const dimCompleted = this.shouldDimCompletedEvents();
     const filterOpts = this.getDayFilterOptions();
 
     const weekdays = getWeekdayLabels(this.getFirstDayOfWeek(), locale);
@@ -176,12 +193,14 @@ export class HaCalendarMonthCard extends BaseCalendarCard<MonthCardConfig> {
                       </div>
 
                       <div class="day-events">
-                        ${visibleDayEvents.map((ev) =>
-                          ev.allDay
+                        ${visibleDayEvents.map((ev) => {
+                          const isPastDimmed =
+                            dimCompleted && isEventPast(ev, this._currentNow);
+                          return ev.allDay
                             ? html`
                                 <button
                                   type="button"
-                                  class="event-pill all-day"
+                                  class="event-pill all-day ${isPastDimmed ? 'is-past' : ''}"
                                   style="--ev-color: ${ev.color};"
                                   title=${`${ev.calendarName}: ${ev.summary}`}
                                   @click=${(e: Event) => this._onEventPillClick(e, ev)}
@@ -193,7 +212,7 @@ export class HaCalendarMonthCard extends BaseCalendarCard<MonthCardConfig> {
                             : html`
                                 <button
                                   type="button"
-                                  class="event-pill timed"
+                                  class="event-pill timed ${isPastDimmed ? 'is-past' : ''}"
                                   style="--ev-color: ${ev.color}; --ev-bg: ${toTranslucentColor(
                                     ev.color,
                                     0.14,
@@ -207,8 +226,8 @@ export class HaCalendarMonthCard extends BaseCalendarCard<MonthCardConfig> {
                                   </span>
                                   <span class="pill-text">${ev.summary}</span>
                                 </button>
-                              `,
-                        )}
+                              `;
+                        })}
 
                         ${hiddenCount > 0
                           ? html`
@@ -390,6 +409,7 @@ export class HaCalendarMonthCard extends BaseCalendarCard<MonthCardConfig> {
         cursor: pointer;
         min-width: 0;
         box-sizing: border-box;
+        transition: opacity 0.15s ease, filter 0.15s ease;
       }
 
       .event-pill.all-day {
@@ -406,6 +426,19 @@ export class HaCalendarMonthCard extends BaseCalendarCard<MonthCardConfig> {
 
       .event-pill:hover {
         filter: brightness(0.94);
+      }
+
+      .event-pill.is-past {
+        opacity: 0.48;
+        filter: grayscale(1);
+      }
+
+      .event-pill.is-past:hover {
+        opacity: 0.78;
+      }
+
+      .event-pill.is-past .pill-text {
+        text-decoration: line-through;
       }
 
       .pill-icon {

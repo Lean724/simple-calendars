@@ -73,13 +73,16 @@ export interface CalendarEvent {
 }
 
 export type SupportedLanguage =
+  | 'en'
   | 'es'
   | 'zh-Hans'
   | 'de'
-  | 'en'
-  | 'pt'
   | 'it'
-  | 'fr';
+  | 'fr'
+  | 'pt'
+  | 'ru'
+  | 'pl'
+  | 'nl';
 
 export type AllDayPosition = 'top' | 'bottom';
 
@@ -98,6 +101,7 @@ export interface BaseCalendarCardConfig {
   show_all_day_events?: boolean;
   all_day_position?: AllDayPosition;
   show_completed_events?: boolean;
+  dim_completed_events?: boolean;
   transparent?: boolean;
   background_color?: string;
   background_opacity?: number;

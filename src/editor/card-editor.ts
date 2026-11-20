@@ -10,6 +10,7 @@ import {
   TRANSLATIONS,
   WEEK_CARD_TYPE,
   resolveLanguage,
+  type TranslationStrings,
 } from '../constants';
 import type {
   AllDayPosition,
@@ -535,6 +536,23 @@ export class HaCalendarCardEditor extends LitElement {
               />
               <span>${strings.editorShowCompletedEvents}</span>
             </label>
+
+            ${this._config.show_completed_events !== false
+              ? html`
+                  <label class="checkbox-row sub-option">
+                    <input
+                      type="checkbox"
+                      .checked=${this._config.dim_completed_events !== false}
+                      @change=${(e: Event) =>
+                        this._updateField(
+                          'dim_completed_events',
+                          (e.target as HTMLInputElement).checked,
+                        )}
+                    />
+                    <span>${strings.editorDimCompletedEvents}</span>
+                  </label>
+                `
+              : nothing}
           </div>
 
           ${this._config.show_all_day_events !== false
@@ -693,7 +711,7 @@ export class HaCalendarCardEditor extends LitElement {
 
   private _renderMonthOptions(
     cfg: MonthCardConfig,
-    strings: (typeof TRANSLATIONS)['es'],
+    strings: TranslationStrings,
   ) {
     return html`
       <div class="field">
@@ -743,7 +761,7 @@ export class HaCalendarCardEditor extends LitElement {
 
   private _renderWeekOptions(
     cfg: WeekCardConfig,
-    strings: (typeof TRANSLATIONS)['es'],
+    strings: TranslationStrings,
   ) {
     return html`
       <div class="field">
@@ -806,7 +824,7 @@ export class HaCalendarCardEditor extends LitElement {
 
   private _renderDayOptions(
     cfg: DayCardConfig,
-    strings: (typeof TRANSLATIONS)['es'],
+    strings: TranslationStrings,
   ) {
     return html`
       <div class="toggles-list">
@@ -841,7 +859,7 @@ export class HaCalendarCardEditor extends LitElement {
 
   private _renderEventOptions(
     cfg: EventCardConfig,
-    strings: (typeof TRANSLATIONS)['es'],
+    strings: TranslationStrings,
   ) {
     return html`
       <div class="two-col">
@@ -986,6 +1004,10 @@ export class HaCalendarCardEditor extends LitElement {
       gap: 8px;
       font-size: 0.88rem;
       cursor: pointer;
+    }
+
+    .checkbox-row.sub-option {
+      padding-left: 20px;
     }
 
     .add-btn {

@@ -28,6 +28,7 @@ import {
   formatDayColParts,
   formatTimeMinimal,
   getEventProgressInfo,
+  getEventsForDay,
   isSameDay,
   startOfDay,
 } from '../utils/date-utils';
@@ -96,21 +97,30 @@ export abstract class BaseCalendarCard<
 
   public connectedCallback(): void {
     super.connectedCallback();
-    this._currentNow = new Date();
-    if (this.autoFollowToday() && !isSameDay(this._anchorDate, this._currentNow)) {
-      this._anchorDate = startOfDay(this._currentNow);
-    }
+    const prevNow = this._currentNow;
+    const now = new Date();
+    this._currentNow = now;
+    this.handleDayRollover(prevNow, now);
     this._tickerId = window.setInterval(() => {
-      const now = new Date();
-      this._currentNow = now;
-      if (this.autoFollowToday() && !isSameDay(this._anchorDate, now)) {
-        this._anchorDate = startOfDay(now);
-      }
+      const tickPrev = this._currentNow;
+      const tickNow = new Date();
+      this._currentNow = tickNow;
+      this.handleDayRollover(tickPrev, tickNow);
     }, 30_000);
   }
 
   protected autoFollowToday(): boolean {
     return false;
+  }
+
+  protected handleDayRollover(prevNow: Date, now: Date): void {
+    if (this.autoFollowToday() && !isSameDay(this._anchorDate, now)) {
+      this._anchorDate = startOfDay(now);
+      return;
+    }
+    if (!isSameDay(prevNow, now) && isSameDay(this._anchorDate, prevNow)) {
+      this._anchorDate = startOfDay(now);
+    }
   }
 
   public disconnectedCallback(): void {
@@ -184,6 +194,10 @@ export abstract class BaseCalendarCard<
     return false;
   }
 
+  protected shouldDimCompletedEvents(): boolean {
+    return this._config?.dim_completed_events !== false;
+  }
+
   protected getDayFilterOptions(): DayEventFilterOptions {
     return {
       showAllDay: this._config?.show_all_day_events !== false,
@@ -217,6 +231,7 @@ export abstract class BaseCalendarCard<
     const dateParts = formatDayColParts(dayDate, locale);
     const useEntityColor = Boolean(this._config?.use_entity_color);
     const showCurrentDayCol = this._config?.show_current_day !== false;
+    const dimCompleted = this.shouldDimCompletedEvents();
     const filteredEvents = filterAndOrderDayEvents(
       dayEvents,
       this.getDayFilterOptions(),
@@ -242,6 +257,7 @@ export abstract class BaseCalendarCard<
                   this._currentNow,
                   strings,
                 );
+                const isPastDimmed = dimCompleted && progress.isPast;
                 const timeText = ev.allDay
                   ? strings.allDay
                   : `${formatTimeMinimal(ev.start)} - ${formatTimeMinimal(ev.end)}`;
@@ -256,7 +272,7 @@ export abstract class BaseCalendarCard<
                 return html`
                   <button
                     type="button"
-                    class="min-event-item"
+                    class="min-event-item ${isPastDimmed ? 'is-past' : ''}"
                     style=${accentStyle}
                     @click=${(e: Event) => {
                       e.stopPropagation();
@@ -385,15 +401,11 @@ export abstract class BaseCalendarCard<
 
   protected _getDayDialogEvents(visibleEvents: CalendarEvent[]): CalendarEvent[] {
     if (!this._selectedDayDate) return [];
-    const target = this._selectedDayDate;
-    const dayStart = new Date(target.getFullYear(), target.getMonth(), target.getDate(), 0, 0, 0, 0);
-    const dayEnd = new Date(target.getFullYear(), target.getMonth(), target.getDate() + 1, 0, 0, 0, 0);
-    return visibleEvents.filter((ev) => {
-      const s = ev.start.getTime();
-      const e = ev.end.getTime();
-      if (e <= s) return s >= dayStart.getTime() && s < dayEnd.getTime();
-      return s < dayEnd.getTime() && e > dayStart.getTime();
-    });
+    return getEventsForDay(
+      visibleEvents,
+      this._selectedDayDate,
+      this.getDayFilterOptions(),
+    );
   }
 
   protected render() {
@@ -475,6 +487,8 @@ export abstract class BaseCalendarCard<
         .event=${this._selectedEvent}
         .dayDate=${this._selectedDayDate}
         .dayEvents=${this._getDayDialogEvents(visibleEvents)}
+        .dimCompletedEvents=${this.shouldDimCompletedEvents()}
+        .now=${this._currentNow}
         .locale=${locale}
         .lang=${lang}
         .strings=${strings}

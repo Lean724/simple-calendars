@@ -131,6 +131,13 @@ export function eventOccursOnDay(
   return startMs < dayEndMs && endMs > dayStartMs;
 }
 
+export function isEventPast(event: CalendarEvent, now: Date = new Date()): boolean {
+  if (event.allDay) {
+    return startOfDay(now).getTime() >= startOfDay(event.end).getTime();
+  }
+  return now.getTime() >= event.end.getTime();
+}
+
 export interface DayEventFilterOptions {
   showAllDay?: boolean;
   allDayPosition?: AllDayPosition;
@@ -145,14 +152,14 @@ export function filterAndOrderDayEvents(
   const showAllDay = options.showAllDay !== false;
   const allDayPos: AllDayPosition = options.allDayPosition === 'bottom' ? 'bottom' : 'top';
   const showCompleted = options.showCompleted !== false;
-  const nowMs = (options.now || new Date()).getTime();
+  const now = options.now || new Date();
 
   return dayEvents
     .filter((ev) => {
       if (!showAllDay && ev.allDay) {
         return false;
       }
-      if (!showCompleted && ev.end.getTime() <= nowMs) {
+      if (!showCompleted && isEventPast(ev, now)) {
         return false;
       }
       return true;
@@ -383,6 +390,9 @@ const CONNECTOR_BY_LANG: Record<SupportedLanguage, string> = {
   pt: 'a',
   it: 'alle',
   fr: 'à',
+  ru: 'до',
+  pl: 'do',
+  nl: 'tot',
 };
 
 export function formatEventInlineRange(
@@ -393,7 +403,7 @@ export function formatEventInlineRange(
   if (event.allDay) {
     return allDayLabel;
   }
-  const connector = CONNECTOR_BY_LANG[lang] || 'a';
+  const connector = CONNECTOR_BY_LANG[lang] || 'to';
   return `${formatTimeMinimal(event.start)} ${connector} ${formatTimeMinimal(event.end)}`;
 }
 

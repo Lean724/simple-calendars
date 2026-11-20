@@ -7,6 +7,7 @@ import {
   formatDayTitle,
   formatEventTimeRange,
   formatTimeShort,
+  isEventPast,
 } from '../utils/date-utils';
 
 @customElement('ha-calendar-event-dialog')
@@ -14,9 +15,11 @@ export class HaCalendarEventDialog extends LitElement {
   @property({ attribute: false }) public event: CalendarEvent | null = null;
   @property({ attribute: false }) public dayDate: Date | null = null;
   @property({ type: Array }) public dayEvents: CalendarEvent[] = [];
-  @property({ type: String }) public locale = 'es-ES';
-  @property({ type: String }) public lang: SupportedLanguage = 'es';
+  @property({ type: String }) public locale = 'en-US';
+  @property({ type: String }) public lang: SupportedLanguage = 'en';
   @property({ attribute: false }) public strings!: TranslationStrings;
+  @property({ type: Boolean }) public dimCompletedEvents = true;
+  @property({ attribute: false }) public now: Date = new Date();
 
   private _handleKeydown = (e: KeyboardEvent) => {
     if (e.key === 'Escape') {
@@ -169,6 +172,7 @@ export class HaCalendarEventDialog extends LitElement {
         ${this.dayEvents.length === 0
           ? html`<div class="empty-day">${this.strings?.noEvents || 'No events'}</div>`
           : this.dayEvents.map((ev) => {
+              const isPastDimmed = this.dimCompletedEvents && isEventPast(ev, this.now);
               const timeStr = ev.allDay
                 ? this.strings?.allDay || 'All day'
                 : `${formatTimeShort(ev.start, this.locale)} – ${formatTimeShort(
@@ -178,7 +182,7 @@ export class HaCalendarEventDialog extends LitElement {
               return html`
                 <button
                   type="button"
-                  class="day-event-row"
+                  class="day-event-row ${isPastDimmed ? 'is-past' : ''}"
                   style="--ev-color: ${ev.color}; --ev-bg: ${toTranslucentColor(
                     ev.color,
                     0.12,
@@ -408,6 +412,19 @@ export class HaCalendarEventDialog extends LitElement {
 
     .day-event-row:hover {
       filter: brightness(0.96);
+    }
+
+    .day-event-row.is-past {
+      opacity: 0.5;
+      filter: grayscale(1);
+    }
+
+    .day-event-row.is-past:hover {
+      opacity: 0.8;
+    }
+
+    .day-event-row.is-past .row-title {
+      text-decoration: line-through;
     }
 
     .row-icon {

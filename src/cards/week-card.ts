@@ -60,6 +60,10 @@ export class HaCalendarWeekCard extends BaseCalendarCard<WeekCardConfig> {
     return true;
   }
 
+  protected override autoFollowToday(): boolean {
+    return !this._config?.show_navigation;
+  }
+
   private _getDaysCount(): number {
     const val = this._config?.days_to_show;
     if (typeof val === 'number' && !Number.isNaN(val)) {

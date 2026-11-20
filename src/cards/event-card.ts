@@ -102,7 +102,12 @@ export class HaCalendarEventCard extends BaseCalendarCard<EventCardConfig> {
     ev: CalendarEvent,
     lang: SupportedLanguage,
     strings: TranslationStrings,
-    options: { isCurrent: boolean; isPrevious?: boolean; showProgressBar: boolean },
+    options: {
+      isCurrent: boolean;
+      isPrevious?: boolean;
+      isPast?: boolean;
+      showProgressBar: boolean;
+    },
   ) {
     const useEntityColor = Boolean(this._config?.use_entity_color);
     const accentStyle = useEntityColor ? `--min-ev-accent: ${ev.color};` : '';
@@ -116,7 +121,7 @@ export class HaCalendarEventCard extends BaseCalendarCard<EventCardConfig> {
     return html`
       <button
         type="button"
-        class="evcard-row ${options.isCurrent ? 'is-current' : ''} ${options.isPrevious ? 'is-previous' : ''}"
+        class="evcard-row ${options.isCurrent ? 'is-current' : ''} ${options.isPrevious ? 'is-previous' : ''} ${options.isPast ? 'is-past' : ''}"
         style=${accentStyle}
         @click=${(e: Event) => {
           e.stopPropagation();
@@ -161,6 +166,7 @@ export class HaCalendarEventCard extends BaseCalendarCard<EventCardConfig> {
     const showAllDay = this._config.show_all_day_events !== false;
     const allDayPos = this._config.all_day_position === 'bottom' ? 'bottom' : 'top';
     const showCompleted = this._config.show_completed_events !== false;
+    const dimCompleted = this.shouldDimCompletedEvents();
     const showProgressBar = this._config.show_progress_bar !== false;
     const showToggles = Boolean(this._config.show_entity_toggles);
 
@@ -262,6 +268,7 @@ export class HaCalendarEventCard extends BaseCalendarCard<EventCardConfig> {
                             this._renderCompactEventRow(ev, lang, strings, {
                               isCurrent: false,
                               isPrevious: true,
+                              isPast: dimCompleted,
                               showProgressBar,
                             }),
                           )}
@@ -441,19 +448,29 @@ export class HaCalendarEventCard extends BaseCalendarCard<EventCardConfig> {
         display: flex;
         flex-direction: column;
         gap: 4px;
-        transition: opacity 0.15s ease;
+        transition: opacity 0.15s ease, filter 0.15s ease;
       }
 
       .evcard-row:hover {
         opacity: 0.82;
       }
 
-      .evcard-row.is-previous {
-        opacity: 0.72;
+      .evcard-row.is-past {
+        opacity: 0.48;
+        filter: grayscale(1);
       }
 
-      .evcard-row.is-previous:hover {
-        opacity: 0.95;
+      .evcard-row.is-past:hover {
+        opacity: 0.8;
+      }
+
+      .evcard-row.is-past .evcard-ev-summary {
+        text-decoration: line-through;
+        color: var(--cal-text-secondary);
+      }
+
+      .evcard-row.is-past .evcard-ev-icon {
+        color: var(--cal-text-secondary);
       }
 
       .evcard-row-line {
