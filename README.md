@@ -4,12 +4,8 @@ A suite of **3 minimalist Home Assistant Lovelace calendar cards** — Monthly, 
 
 <p align="center">
   <img src="docs/preview-daily.jpg" alt="Simple-Calendars Daily Card - Completed Events Dimmed & Live Progress" width="48%" />
-  <img src="docs/preview-month.jpg" alt="Simple-Calendars Monthly Card - Scalable 4x12 Grid with Dots & Bottom Summary" width="48%" />
 </p>
 
-<p align="center">
-  <img src="docs/preview-focus-event-editor.png" alt="Simple-Calendars Visual Configuration Editor & Focus Event Preview" width="100%" />
-</p>
 
 Compatible with **Home Assistant Marketplace** (**HACS**) and both **Sections** and **Masonry** dashboard views.
 
@@ -58,6 +54,13 @@ Compatible with **Home Assistant Marketplace** (**HACS**) and both **Sections** 
 
 ## Configuration
 
+
+<p align="center">
+  <img src="docs/preview-focus-event-editor.png" alt="Simple-Calendars Visual Configuration Editor & Focus Event Preview" width="100%" />
+</p>
+
+
+
 ### Shared Entity Configuration (`entities`)
 
 | Option | Type | Default | Description |
@@ -98,6 +101,8 @@ Compatible with **Home Assistant Marketplace** (**HACS**) and both **Sections** 
 | `max_upcoming_events` | `number` | `2` | Maximum number of upcoming events shown (`0` hides the section). |
 | `show_progress_bar` | `boolean` | `true` | Shows the live progress bar on ongoing events. |
 | `show_entity_toggles` | `boolean` | `false` | Shows quick calendar filter chips in the title bar. |
+
+
 
 ```yaml
 type: custom:simple-calendar-focus-event-card
@@ -176,6 +181,10 @@ entities:
 ```
 
 ---
+<p align="center">
+  <img src="docs/preview-month.jpg" alt="Simple-Calendars Monthly Card - Scalable 4x12 Grid with Dots & Bottom Summary" width="48%" />
+</p>
+
 
 ## Development
 
