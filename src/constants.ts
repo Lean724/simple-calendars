@@ -1,6 +1,6 @@
 import type { HomeAssistant, SupportedLanguage } from './types';
 
-export const CARD_VERSION = '2.0.1';
+export const CARD_VERSION = '2.1.0';
 
 export const MONTH_CARD_TYPE = 'simple-calendar-month-card';
 export const DAY_CARD_TYPE = 'simple-calendar-day-card';
@@ -110,6 +110,10 @@ export interface TranslationStrings {
   editorSizeCompact: string;
   editorSizeNormal: string;
   editorSizeLarge: string;
+  editorLayout: string;
+  editorLayoutClassic: string;
+  editorLayoutCompact: string;
+  editorShowMonthGrid: string;
   editorEventDisplay: string;
   editorDisplayPills: string;
   editorDisplayDots: string;
@@ -196,6 +200,10 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     editorSizeCompact: 'Compacto',
     editorSizeNormal: 'Normal',
     editorSizeLarge: 'Grande',
+    editorLayout: 'Diseño',
+    editorLayoutClassic: 'Clásico',
+    editorLayoutCompact: 'Compacto',
+    editorShowMonthGrid: 'Mostrar grilla del mes',
     editorEventDisplay: 'Estilo de eventos en grilla',
     editorDisplayPills: 'Píldoras (con texto)',
     editorDisplayDots: 'Puntos (minimalista)',
@@ -280,6 +288,10 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     editorSizeCompact: '紧凑',
     editorSizeNormal: '标准',
     editorSizeLarge: '大号',
+    editorLayout: '布局',
+    editorLayoutClassic: '经典',
+    editorLayoutCompact: '紧凑',
+    editorShowMonthGrid: '显示月历网格',
     editorEventDisplay: '网格日程样式',
     editorDisplayPills: '标签（含文字）',
     editorDisplayDots: '圆点（极简）',
@@ -364,6 +376,10 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     editorSizeCompact: 'Kompakt',
     editorSizeNormal: 'Normal',
     editorSizeLarge: 'Groß',
+    editorLayout: 'Layout',
+    editorLayoutClassic: 'Klassisch',
+    editorLayoutCompact: 'Kompakt',
+    editorShowMonthGrid: 'Monatsraster anzeigen',
     editorEventDisplay: 'Terminanzeige im Raster',
     editorDisplayPills: 'Kapseln (mit Text)',
     editorDisplayDots: 'Punkte (minimalistisch)',
@@ -448,6 +464,10 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     editorSizeCompact: 'Compact',
     editorSizeNormal: 'Normal',
     editorSizeLarge: 'Large',
+    editorLayout: 'Layout',
+    editorLayoutClassic: 'Classic',
+    editorLayoutCompact: 'Compact',
+    editorShowMonthGrid: 'Show month grid',
     editorEventDisplay: 'Grid event style',
     editorDisplayPills: 'Pills (with text)',
     editorDisplayDots: 'Dots (minimal)',
@@ -532,6 +552,10 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     editorSizeCompact: 'Compacto',
     editorSizeNormal: 'Normal',
     editorSizeLarge: 'Grande',
+    editorLayout: 'Layout',
+    editorLayoutClassic: 'Clássico',
+    editorLayoutCompact: 'Compacto',
+    editorShowMonthGrid: 'Mostrar grade do mês',
     editorEventDisplay: 'Estilo de eventos na grade',
     editorDisplayPills: 'Pílulas (com texto)',
     editorDisplayDots: 'Pontos (minimalista)',
@@ -616,6 +640,10 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     editorSizeCompact: 'Compatto',
     editorSizeNormal: 'Normale',
     editorSizeLarge: 'Grande',
+    editorLayout: 'Layout',
+    editorLayoutClassic: 'Classico',
+    editorLayoutCompact: 'Compatto',
+    editorShowMonthGrid: 'Mostra griglia mensile',
     editorEventDisplay: 'Stile eventi nella griglia',
     editorDisplayPills: 'Pillole (con testo)',
     editorDisplayDots: 'Puntini (minimale)',
@@ -700,6 +728,10 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     editorSizeCompact: 'Compact',
     editorSizeNormal: 'Normal',
     editorSizeLarge: 'Grand',
+    editorLayout: 'Disposition',
+    editorLayoutClassic: 'Classique',
+    editorLayoutCompact: 'Compact',
+    editorShowMonthGrid: 'Afficher la grille du mois',
     editorEventDisplay: 'Style des événements dans la grille',
     editorDisplayPills: 'Pastilles (avec texte)',
     editorDisplayDots: 'Points (minimaliste)',
@@ -784,6 +816,10 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     editorSizeCompact: 'Компактный',
     editorSizeNormal: 'Обычный',
     editorSizeLarge: 'Крупный',
+    editorLayout: 'Макет',
+    editorLayoutClassic: 'Классический',
+    editorLayoutCompact: 'Компактный',
+    editorShowMonthGrid: 'Показать сетку месяца',
     editorEventDisplay: 'Отображение событий в сетке',
     editorDisplayPills: 'Плашки (с текстом)',
     editorDisplayDots: 'Точки (минимализм)',
@@ -868,6 +904,10 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     editorSizeCompact: 'Kompaktowy',
     editorSizeNormal: 'Normalny',
     editorSizeLarge: 'Duży',
+    editorLayout: 'Układ',
+    editorLayoutClassic: 'Klasyczny',
+    editorLayoutCompact: 'Kompaktowy',
+    editorShowMonthGrid: 'Pokaż siatkę miesiąca',
     editorEventDisplay: 'Styl wydarzeń w siatce',
     editorDisplayPills: 'Etykiety (z tekstem)',
     editorDisplayDots: 'Kropki (minimalistyczny)',
@@ -952,6 +992,10 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     editorSizeCompact: 'Compact',
     editorSizeNormal: 'Normaal',
     editorSizeLarge: 'Groot',
+    editorLayout: 'Indeling',
+    editorLayoutClassic: 'Klassiek',
+    editorLayoutCompact: 'Compact',
+    editorShowMonthGrid: 'Maandraster tonen',
     editorEventDisplay: 'Weergave van afspraken in raster',
     editorDisplayPills: 'Labels (met tekst)',
     editorDisplayDots: 'Stippen (minimalistisch)',

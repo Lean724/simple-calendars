@@ -198,6 +198,14 @@ export abstract class BaseCalendarCard<
     return false;
   }
 
+  protected showHeaderNavigation(): boolean {
+    return this._config?.show_navigation !== false;
+  }
+
+  protected isUppercaseHeader(): boolean {
+    return false;
+  }
+
   protected shouldDimCompletedEvents(): boolean {
     return this._config?.dim_completed_events !== false;
   }
@@ -444,6 +452,8 @@ export abstract class BaseCalendarCard<
                 .entities=${entities}
                 .hiddenEntities=${this._hiddenEntities}
                 .showEntityToggles=${showToggles}
+                .showNavigation=${this.showHeaderNavigation()}
+                .uppercasePeriod=${this.isUppercaseHeader()}
                 .loading=${this._loading}
                 .compact=${this.isCompactHeader()}
                 .strings=${strings}

@@ -12,6 +12,7 @@ import type {
   MonthCardConfig,
   MonthEventDisplay,
   MonthGridDay,
+  MonthLayout,
   NormalizedCalendarEntity,
   SupportedLanguage,
 } from '../types';
@@ -20,18 +21,28 @@ import {
   endOfDay,
   formatMonthTitle,
   formatTimeMinimal,
+  getEventProgressInfo,
   getEventsForDay,
   getMonthGridDays,
   getWeekdayLabels,
   isEventPast,
   isSameDay,
   startOfDay,
+  type DayEventFilterOptions,
 } from '../utils/date-utils';
 import { BaseCalendarCard, buildStubEntities } from './base-card';
 
 @customElement(MONTH_CARD_TYPE)
 export class HaCalendarMonthCard extends BaseCalendarCard<MonthCardConfig> {
   @state() private _focusedDay: Date = startOfDay(new Date());
+  @state() private _carouselIndex = 0;
+
+  private _touchStartX: number | null = null;
+  private _touchStartY: number | null = null;
+
+  private _getLayout(): MonthLayout {
+    return this._config?.layout === 'compact' ? 'compact' : 'classic';
+  }
 
   private _getCalendarSize(): MonthCalendarSize {
     const size = this._config?.calendar_size;
@@ -44,17 +55,53 @@ export class HaCalendarMonthCard extends BaseCalendarCard<MonthCardConfig> {
     return this._config?.event_display === 'dots' ? 'dots' : 'pills';
   }
 
+  private _focusDay(date: Date): void {
+    this._focusedDay = startOfDay(date);
+    this._carouselIndex = 0;
+  }
+
+  private _stepCarousel(delta: number, total: number): void {
+    const maxIndex = Math.max(0, total - 2);
+    const next = Math.min(maxIndex, Math.max(0, this._carouselIndex + delta));
+    this._carouselIndex = next;
+  }
+
+  private _onCarouselTouchStart(e: TouchEvent): void {
+    const touch = e.touches?.[0];
+    if (!touch) return;
+    this._touchStartX = touch.clientX;
+    this._touchStartY = touch.clientY;
+  }
+
+  private _onCarouselTouchEnd(e: TouchEvent, total: number): void {
+    if (this._touchStartX === null || this._touchStartY === null) return;
+    const touch = e.changedTouches?.[0];
+    const startX = this._touchStartX;
+    const startY = this._touchStartY;
+    this._touchStartX = null;
+    this._touchStartY = null;
+    if (!touch || total <= 2) return;
+    const dx = touch.clientX - startX;
+    const dy = touch.clientY - startY;
+    if (Math.abs(dx) >= 32 && Math.abs(dx) > Math.abs(dy)) {
+      this._stepCarousel(dx < 0 ? 1 : -1, total);
+    }
+  }
+
   public static getStubConfig(hass?: HomeAssistant): MonthCardConfig {
     return {
       type: `custom:${MONTH_CARD_TYPE}`,
       entities: buildStubEntities(hass),
       first_day_of_week: 1,
+      layout: 'classic',
       calendar_size: 'normal',
       event_display: 'pills',
       max_events_per_day: 3,
       show_header: true,
+      show_navigation: true,
       show_entity_toggles: false,
       show_week_numbers: false,
+      show_month_grid: true,
       show_day_summary: true,
       show_progress_bar: true,
       dim_completed_events: true,
@@ -64,6 +111,7 @@ export class HaCalendarMonthCard extends BaseCalendarCard<MonthCardConfig> {
   }
 
   public getCardSize(): number {
+    if (this._config?.show_month_grid === false) return 2;
     const size = this._getCalendarSize();
     const showSummary = this._config?.show_day_summary !== false;
     if (size === 'compact') return showSummary ? 4 : 3;
@@ -72,6 +120,14 @@ export class HaCalendarMonthCard extends BaseCalendarCard<MonthCardConfig> {
   }
 
   public getGridOptions() {
+    if (this._config?.show_month_grid === false) {
+      return {
+        columns: 12,
+        min_columns: 6,
+        rows: 2,
+        min_rows: 2,
+      };
+    }
     const size = this._getCalendarSize();
     const showSummary = this._config?.show_day_summary !== false;
     const rows =
@@ -102,6 +158,10 @@ export class HaCalendarMonthCard extends BaseCalendarCard<MonthCardConfig> {
     return this._getCalendarSize() === 'compact';
   }
 
+  protected override isUppercaseHeader(): boolean {
+    return this._getLayout() === 'compact';
+  }
+
   protected getFetchRange(): { start: Date; end: Date } {
     const grid = this._getGridDays();
     return {
@@ -116,32 +176,36 @@ export class HaCalendarMonthCard extends BaseCalendarCard<MonthCardConfig> {
 
   protected navigatePrev(): void {
     this._anchorDate = addMonths(this._anchorDate, -1);
-    this._focusedDay = new Date(
-      this._anchorDate.getFullYear(),
-      this._anchorDate.getMonth(),
-      1,
+    this._focusDay(
+      new Date(
+        this._anchorDate.getFullYear(),
+        this._anchorDate.getMonth(),
+        1,
+      ),
     );
   }
 
   protected navigateNext(): void {
     this._anchorDate = addMonths(this._anchorDate, 1);
-    this._focusedDay = new Date(
-      this._anchorDate.getFullYear(),
-      this._anchorDate.getMonth(),
-      1,
+    this._focusDay(
+      new Date(
+        this._anchorDate.getFullYear(),
+        this._anchorDate.getMonth(),
+        1,
+      ),
     );
   }
 
   protected navigateToday(): void {
     const now = new Date();
     this._anchorDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
-    this._focusedDay = startOfDay(now);
+    this._focusDay(now);
   }
 
   protected override handleDayRollover(prevNow: Date, now: Date): void {
     if (isSameDay(prevNow, now)) return;
     if (isSameDay(this._focusedDay, prevNow)) {
-      this._focusedDay = startOfDay(now);
+      this._focusDay(now);
     }
     if (
       this._anchorDate.getFullYear() === prevNow.getFullYear() &&
@@ -171,6 +235,248 @@ export class HaCalendarMonthCard extends BaseCalendarCard<MonthCardConfig> {
     this._selectedEvent = ev;
   }
 
+  private _renderDayDots(
+    visibleDayEvents: CalendarEvent[],
+    hiddenCount: number,
+    dimCompleted: boolean,
+    extraClass = '',
+  ) {
+    return html`
+      <div class="day-dots ${extraClass}">
+        ${visibleDayEvents.map((ev) => {
+          const isPastDimmed = dimCompleted && isEventPast(ev, this._currentNow);
+          const dotTitle = ev.allDay
+            ? `${ev.calendarName}: ${ev.summary}`
+            : `${formatTimeMinimal(ev.start)} ${ev.summary} (${ev.calendarName})`;
+          return html`
+            <span
+              class="event-dot ${ev.allDay ? 'all-day' : 'timed'} ${isPastDimmed ? 'is-past' : ''}"
+              style="--ev-color: ${ev.color};"
+              title=${dotTitle}
+            ></span>
+          `;
+        })}
+        ${hiddenCount > 0
+          ? html`<span class="dots-more">+${hiddenCount}</span>`
+          : nothing}
+      </div>
+    `;
+  }
+
+  private _renderCompactFocusBar(
+    focusedDayEvents: CalendarEvent[],
+    locale: string,
+    strings: TranslationStrings,
+    showCurrentDay: boolean,
+    showProgressBar: boolean,
+    dimCompleted: boolean,
+  ) {
+    const weekdayLabel = new Intl.DateTimeFormat(locale, {
+      weekday: 'long',
+    }).format(this._focusedDay);
+    const useEntityColor = Boolean(this._config?.use_entity_color);
+    const totalEvents = focusedDayEvents.length;
+    const maxIndex = Math.max(0, totalEvents - 2);
+    const safeIndex = Math.min(Math.max(0, this._carouselIndex), maxIndex);
+    const slotEvents = focusedDayEvents.slice(safeIndex, safeIndex + 2);
+    const emptyText = isSameDay(this._focusedDay, this._currentNow)
+      ? strings.noEvents
+      : strings.noEventsDay;
+
+    return html`
+      <div class="compact-focus-bar ${showCurrentDay ? '' : 'no-date-col'}">
+        ${showCurrentDay
+          ? html`
+              <div class="compact-date-col">
+                <span class="compact-weekday">${weekdayLabel}</span>
+                <span class="compact-day-hero">${this._focusedDay.getDate()}</span>
+              </div>
+            `
+          : nothing}
+
+        <div
+          class="compact-events-carousel"
+          @touchstart=${this._onCarouselTouchStart}
+          @touchend=${(e: TouchEvent) => this._onCarouselTouchEnd(e, totalEvents)}
+        >
+          ${totalEvents === 0
+            ? html`<div class="compact-empty-text">${emptyText}</div>`
+            : html`
+                <div
+                  class="compact-events-slots ${slotEvents.length > 1 ? 'cols-2' : 'cols-1'}"
+                >
+                  ${slotEvents.map((ev) => {
+                    const progress = getEventProgressInfo(
+                      ev,
+                      this._currentNow,
+                      strings,
+                    );
+                    const isPastDimmed = dimCompleted && progress.isPast;
+                    const timeText = ev.allDay
+                      ? strings.allDay
+                      : `${formatTimeMinimal(ev.start)} - ${formatTimeMinimal(ev.end)}`;
+                    const displayTitle =
+                      ev.summary && ev.summary !== '(Sin título)'
+                        ? ev.summary
+                        : ev.calendarName;
+                    const slotStyle = useEntityColor
+                      ? `--slot-accent: ${ev.color};`
+                      : '--slot-accent: var(--cal-accent);';
+
+                    return html`
+                      <button
+                        type="button"
+                        class="compact-event-slot ${isPastDimmed ? 'is-past' : ''}"
+                        style=${slotStyle}
+                        @click=${(e: Event) => this._onEventPillClick(e, ev)}
+                      >
+                        <div class="compact-slot-time-row">
+                          ${useEntityColor
+                            ? html`<span class="compact-slot-dot"></span>`
+                            : nothing}
+                          <span class="compact-slot-time">${timeText}</span>
+                        </div>
+                        <div class="compact-slot-title">${displayTitle}</div>
+                        ${showProgressBar && progress.isOngoing
+                          ? html`
+                              <div
+                                class="compact-progress-track"
+                                role="progressbar"
+                                aria-valuenow=${Math.round(progress.progressPct)}
+                                aria-valuemin="0"
+                                aria-valuemax="100"
+                              >
+                                <div
+                                  class="compact-progress-fill"
+                                  style="width: ${progress.progressPct}%;"
+                                ></div>
+                              </div>
+                            `
+                          : nothing}
+                      </button>
+                    `;
+                  })}
+                </div>
+
+                ${totalEvents > 2
+                  ? html`
+                      <div class="carousel-controls">
+                        <button
+                          type="button"
+                          class="carousel-nav-btn carousel-prev"
+                          ?disabled=${safeIndex === 0}
+                          title=${strings.prev}
+                          aria-label=${strings.prev}
+                          @click=${(e: Event) => {
+                            e.stopPropagation();
+                            this._stepCarousel(-1, totalEvents);
+                          }}
+                        >
+                          <ha-icon icon="mdi:chevron-left"></ha-icon>
+                        </button>
+                        <button
+                          type="button"
+                          class="carousel-nav-btn carousel-next"
+                          ?disabled=${safeIndex >= maxIndex}
+                          title=${strings.next}
+                          aria-label=${strings.next}
+                          @click=${(e: Event) => {
+                            e.stopPropagation();
+                            this._stepCarousel(1, totalEvents);
+                          }}
+                        >
+                          <ha-icon icon="mdi:chevron-right"></ha-icon>
+                        </button>
+                      </div>
+                    `
+                  : nothing}
+              `}
+        </div>
+      </div>
+    `;
+  }
+
+  private _renderCompactGrid(
+    weeks: MonthGridDay[][],
+    weekdays: string[],
+    visibleEvents: CalendarEvent[],
+    filterOpts: DayEventFilterOptions,
+    maxEvents: number,
+    showWeekNumbers: boolean,
+    showDaySummary: boolean,
+    showCurrentDay: boolean,
+    dimCompleted: boolean,
+    strings: TranslationStrings,
+  ) {
+    return html`
+      <div class="compact-grid-wrap">
+        <div
+          class="compact-weekday-row ${showWeekNumbers ? 'with-weeks' : ''}"
+          role="row"
+        >
+          ${showWeekNumbers
+            ? html`<div class="compact-week-col-header">${strings.weekAbbr}</div>`
+            : nothing}
+          ${weekdays.map(
+            (label) => html`<div class="compact-weekday-cell">${label}</div>`,
+          )}
+        </div>
+
+        <div class="compact-weeks-container">
+          ${weeks.map((week) => {
+            const isActiveWeek = week.some((d) => isSameDay(d.date, this._focusedDay));
+            return html`
+              <div
+                class="compact-week-row ${showWeekNumbers ? 'with-weeks' : ''} ${isActiveWeek ? 'is-active-week' : ''}"
+              >
+                ${showWeekNumbers
+                  ? html`<div class="compact-week-number-cell">${week[0].weekNumber}</div>`
+                  : nothing}
+                ${week.map((day) => {
+                  if (!day.isCurrentMonth) {
+                    return html`<div class="compact-day-cell outside-month" aria-hidden="true"></div>`;
+                  }
+                  const dayEvents = getEventsForDay(visibleEvents, day.date, filterOpts);
+                  const visibleDayEvents = dayEvents.slice(0, maxEvents);
+                  const hiddenCount = dayEvents.length - visibleDayEvents.length;
+                  const isFocused = isSameDay(day.date, this._focusedDay);
+                  const markToday = showCurrentDay && day.isToday;
+
+                  return html`
+                    <button
+                      type="button"
+                      class="compact-day-cell ${markToday ? 'is-today' : ''} ${isFocused ? 'is-focused' : ''}"
+                      @click=${() => {
+                        this._focusDay(day.date);
+                        if (!showDaySummary && dayEvents.length > 0) {
+                          this._openDayList(day.date);
+                        }
+                      }}
+                    >
+                      <span
+                        class="compact-day-num ${isFocused ? 'is-focused-badge' : ''} ${markToday ? 'is-today-badge' : ''}"
+                      >
+                        ${day.date.getDate()}
+                      </span>
+                      ${visibleDayEvents.length > 0
+                        ? this._renderDayDots(
+                            visibleDayEvents,
+                            hiddenCount,
+                            dimCompleted,
+                            'compact-day-dots',
+                          )
+                        : nothing}
+                    </button>
+                  `;
+                })}
+              </div>
+            `;
+          })}
+        </div>
+      </div>
+    `;
+  }
+
   protected renderCalendarBody(
     visibleEvents: CalendarEvent[],
     _entities: NormalizedCalendarEntity[],
@@ -178,12 +484,19 @@ export class HaCalendarMonthCard extends BaseCalendarCard<MonthCardConfig> {
     _lang: SupportedLanguage,
     strings: TranslationStrings,
   ) {
+    const layout = this._getLayout();
     const size = this._getCalendarSize();
     const eventDisplay = this._getEventDisplay();
     const showWeekNumbers = Boolean(this._config.show_week_numbers);
+    const showMonthGrid = this._config.show_month_grid !== false;
     const showDaySummary = this._config.show_day_summary !== false;
     const showProgressBar = this._config.show_progress_bar !== false;
-    const defaultMax = eventDisplay === 'dots' ? 4 : size === 'compact' ? 2 : 3;
+    const defaultMax =
+      layout === 'compact' || eventDisplay === 'dots'
+        ? 4
+        : size === 'compact'
+          ? 2
+          : 3;
     const maxEvents = Math.max(1, this._config.max_events_per_day ?? defaultMax);
     const showCurrentDay = this._config.show_current_day !== false;
     const dimCompleted = this.shouldDimCompletedEvents();
@@ -199,138 +512,157 @@ export class HaCalendarMonthCard extends BaseCalendarCard<MonthCardConfig> {
 
     const focusedDayEvents = getEventsForDay(visibleEvents, this._focusedDay, filterOpts);
 
-    return html`
-      <div class="month-root size-${size} display-${eventDisplay}">
-        <div class="month-grid-wrap">
-          <div
-            class="weekday-row ${showWeekNumbers ? 'with-weeks' : ''}"
-            role="row"
-          >
-            ${showWeekNumbers
-              ? html`<div class="week-col-header">${strings.weekAbbr}</div>`
-              : nothing}
-            ${weekdays.map(
-              (label) => html`<div class="weekday-cell">${label}</div>`,
-            )}
-          </div>
-
-          <div
-            class="weeks-container"
-            style="--mc-week-count: ${weeks.length};"
-          >
-            ${weeks.map(
-              (week) => html`
-                <div class="week-row ${showWeekNumbers ? 'with-weeks' : ''}">
-                  ${showWeekNumbers
-                    ? html`<div class="week-number-cell">${week[0].weekNumber}</div>`
-                    : nothing}
-                  ${week.map((day) => {
-                    const dayEvents = getEventsForDay(visibleEvents, day.date, filterOpts);
-                    const visibleDayEvents = dayEvents.slice(0, maxEvents);
-                    const hiddenCount = dayEvents.length - visibleDayEvents.length;
-                    const isFocused = isSameDay(day.date, this._focusedDay);
-                    const markToday = showCurrentDay && day.isToday;
-
-                    return html`
-                      <div
-                        class="day-cell ${day.isCurrentMonth ? '' : 'outside-month'} ${markToday ? 'is-today' : ''} ${isFocused ? 'is-focused' : ''}"
-                        @click=${() => {
-                          this._focusedDay = day.date;
-                          if (!showDaySummary && dayEvents.length > 0) {
-                            this._openDayList(day.date);
-                          }
-                        }}
-                      >
-                        <div class="day-cell-top">
-                          <span class="day-num ${markToday ? 'today-circle' : ''}">
-                            ${day.date.getDate()}
-                          </span>
-                        </div>
-
-                        <div class="day-events">
-                          ${eventDisplay === 'dots'
-                            ? html`
-                                <div class="day-dots">
-                                  ${visibleDayEvents.map((ev) => {
-                                    const isPastDimmed =
-                                      dimCompleted && isEventPast(ev, this._currentNow);
-                                    const dotTitle = ev.allDay
-                                      ? `${ev.calendarName}: ${ev.summary}`
-                                      : `${formatTimeMinimal(ev.start)} ${ev.summary} (${ev.calendarName})`;
-                                    return html`
-                                      <span
-                                        class="event-dot ${ev.allDay ? 'all-day' : 'timed'} ${isPastDimmed ? 'is-past' : ''}"
-                                        style="--ev-color: ${ev.color};"
-                                        title=${dotTitle}
-                                      ></span>
-                                    `;
-                                  })}
-                                  ${hiddenCount > 0
-                                    ? html`<span class="dots-more">+${hiddenCount}</span>`
-                                    : nothing}
-                                </div>
-                              `
-                            : html`
-                                ${visibleDayEvents.map((ev) => {
-                                  const isPastDimmed =
-                                    dimCompleted && isEventPast(ev, this._currentNow);
-                                  return ev.allDay
-                                    ? html`
-                                        <button
-                                          type="button"
-                                          class="event-pill all-day ${isPastDimmed ? 'is-past' : ''}"
-                                          style="--ev-color: ${ev.color};"
-                                          title=${`${ev.calendarName}: ${ev.summary}`}
-                                          @click=${(e: Event) => this._onEventPillClick(e, ev)}
-                                        >
-                                          <ha-icon class="pill-icon" .icon=${ev.icon}></ha-icon>
-                                          <span class="pill-text">${ev.summary}</span>
-                                        </button>
-                                      `
-                                    : html`
-                                        <button
-                                          type="button"
-                                          class="event-pill timed ${isPastDimmed ? 'is-past' : ''}"
-                                          style="--ev-color: ${ev.color}; --ev-bg: ${toTranslucentColor(
-                                            ev.color,
-                                            0.14,
-                                          )};"
-                                          title=${`${formatTimeMinimal(ev.start)} ${ev.summary} (${ev.calendarName})`}
-                                          @click=${(e: Event) => this._onEventPillClick(e, ev)}
-                                        >
-                                          <span class="pill-dot"></span>
-                                          <span class="pill-time">
-                                            ${formatTimeMinimal(ev.start)}
-                                          </span>
-                                          <span class="pill-text">${ev.summary}</span>
-                                        </button>
-                                      `;
-                                })}
-
-                                ${hiddenCount > 0
-                                  ? html`
-                                      <button
-                                        type="button"
-                                        class="more-btn"
-                                        @click=${(e: Event) => {
-                                          e.stopPropagation();
-                                          this._openDayList(day.date);
-                                        }}
-                                      >
-                                        +<span class="more-num">${hiddenCount}</span><span class="more-word"> ${strings.moreEvents}</span>
-                                      </button>
-                                    `
-                                  : nothing}
-                              `}
-                        </div>
-                      </div>
-                    `;
-                  })}
-                </div>
-              `,
-            )}
-          </div>
+    if (layout === 'compact') {
+      return html`
+        <div class="month-root size-${size} display-dots layout-compact">
+          ${showDaySummary
+            ? this._renderCompactFocusBar(
+                focusedDayEvents,
+                locale,
+                strings,
+                showCurrentDay,
+                showProgressBar,
+                dimCompleted,
+              )
+            : nothing}
+          ${showMonthGrid
+            ? this._renderCompactGrid(
+                weeks,
+                weekdays,
+                visibleEvents,
+                filterOpts,
+                maxEvents,
+                showWeekNumbers,
+                showDaySummary,
+                showCurrentDay,
+                dimCompleted,
+                strings,
+              )
+            : nothing}
         </div>
+      `;
+    }
+
+    return html`
+      <div class="month-root size-${size} display-${eventDisplay} layout-classic">
+        ${showMonthGrid
+          ? html`
+              <div class="month-grid-wrap">
+                <div
+                  class="weekday-row ${showWeekNumbers ? 'with-weeks' : ''}"
+                  role="row"
+                >
+                  ${showWeekNumbers
+                    ? html`<div class="week-col-header">${strings.weekAbbr}</div>`
+                    : nothing}
+                  ${weekdays.map(
+                    (label) => html`<div class="weekday-cell">${label}</div>`,
+                  )}
+                </div>
+
+                <div
+                  class="weeks-container"
+                  style="--mc-week-count: ${weeks.length};"
+                >
+                  ${weeks.map(
+                    (week) => html`
+                      <div class="week-row ${showWeekNumbers ? 'with-weeks' : ''}">
+                        ${showWeekNumbers
+                          ? html`<div class="week-number-cell">${week[0].weekNumber}</div>`
+                          : nothing}
+                        ${week.map((day) => {
+                          const dayEvents = getEventsForDay(visibleEvents, day.date, filterOpts);
+                          const visibleDayEvents = dayEvents.slice(0, maxEvents);
+                          const hiddenCount = dayEvents.length - visibleDayEvents.length;
+                          const isFocused = isSameDay(day.date, this._focusedDay);
+                          const markToday = showCurrentDay && day.isToday;
+
+                          return html`
+                            <div
+                              class="day-cell ${day.isCurrentMonth ? '' : 'outside-month'} ${markToday ? 'is-today' : ''} ${isFocused ? 'is-focused' : ''}"
+                              @click=${() => {
+                                this._focusDay(day.date);
+                                if (!showDaySummary && dayEvents.length > 0) {
+                                  this._openDayList(day.date);
+                                }
+                              }}
+                            >
+                              <div class="day-cell-top">
+                                <span class="day-num ${markToday ? 'today-circle' : ''}">
+                                  ${day.date.getDate()}
+                                </span>
+                              </div>
+
+                              <div class="day-events">
+                                ${eventDisplay === 'dots'
+                                  ? this._renderDayDots(
+                                      visibleDayEvents,
+                                      hiddenCount,
+                                      dimCompleted,
+                                    )
+                                  : html`
+                                      ${visibleDayEvents.map((ev) => {
+                                        const isPastDimmed =
+                                          dimCompleted && isEventPast(ev, this._currentNow);
+                                        return ev.allDay
+                                          ? html`
+                                              <button
+                                                type="button"
+                                                class="event-pill all-day ${isPastDimmed ? 'is-past' : ''}"
+                                                style="--ev-color: ${ev.color};"
+                                                title=${`${ev.calendarName}: ${ev.summary}`}
+                                                @click=${(e: Event) => this._onEventPillClick(e, ev)}
+                                              >
+                                                <ha-icon class="pill-icon" .icon=${ev.icon}></ha-icon>
+                                                <span class="pill-text">${ev.summary}</span>
+                                              </button>
+                                            `
+                                          : html`
+                                              <button
+                                                type="button"
+                                                class="event-pill timed ${isPastDimmed ? 'is-past' : ''}"
+                                                style="--ev-color: ${ev.color}; --ev-bg: ${toTranslucentColor(
+                                                  ev.color,
+                                                  0.14,
+                                                )};"
+                                                title=${`${formatTimeMinimal(ev.start)} ${ev.summary} (${ev.calendarName})`}
+                                                @click=${(e: Event) => this._onEventPillClick(e, ev)}
+                                              >
+                                                <span class="pill-dot"></span>
+                                                <span class="pill-time">
+                                                  ${formatTimeMinimal(ev.start)}
+                                                </span>
+                                                <span class="pill-text">${ev.summary}</span>
+                                              </button>
+                                            `;
+                                      })}
+
+                                      ${hiddenCount > 0
+                                        ? html`
+                                            <button
+                                              type="button"
+                                              class="more-btn"
+                                              @click=${(e: Event) => {
+                                                e.stopPropagation();
+                                                this._openDayList(day.date);
+                                              }}
+                                            >
+                                              +<span class="more-num">${hiddenCount}</span><span class="more-word"> ${strings.moreEvents}</span>
+                                            </button>
+                                          `
+                                        : nothing}
+                                    `}
+                              </div>
+                            </div>
+                          `;
+                        })}
+                      </div>
+                    `,
+                  )}
+                </div>
+              </div>
+            `
+          : nothing}
 
         ${showDaySummary
           ? html`
@@ -700,6 +1032,369 @@ export class HaCalendarMonthCard extends BaseCalendarCard<MonthCardConfig> {
 
         .day-cell {
           gap: 1px;
+        }
+      }
+
+      /* Compact structural layout */
+      .month-root.size-compact {
+        --mc-compact-row-min-h: 28px;
+        --mc-compact-day-font: 0.82rem;
+      }
+
+      .month-root.size-normal {
+        --mc-compact-row-min-h: 36px;
+        --mc-compact-day-font: 0.92rem;
+      }
+
+      .month-root.size-large {
+        --mc-compact-row-min-h: 46px;
+        --mc-compact-day-font: 1.02rem;
+      }
+
+      .compact-focus-bar {
+        display: flex;
+        align-items: stretch;
+        gap: 14px;
+        flex-shrink: 0;
+      }
+
+      .compact-date-col {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        flex-shrink: 0;
+        min-width: 56px;
+        padding-right: 4px;
+      }
+
+      .compact-weekday {
+        font-size: 0.78rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--cal-text-primary);
+        line-height: 1.1;
+      }
+
+      .compact-day-hero {
+        font-size: 2.35rem;
+        font-weight: 800;
+        line-height: 0.96;
+        color: var(--cal-text-primary);
+        letter-spacing: -0.02em;
+        margin-top: 2px;
+      }
+
+      .compact-events-carousel {
+        flex: 1 1 auto;
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding-left: 14px;
+        border-left: 2px solid color-mix(in srgb, var(--cal-text-primary) 26%, transparent);
+      }
+
+      .compact-focus-bar.no-date-col .compact-events-carousel {
+        padding-left: 0;
+        border-left: none;
+      }
+
+      .compact-empty-text {
+        font-size: 0.92rem;
+        font-style: italic;
+        font-weight: 600;
+        color: var(--cal-text-secondary);
+        padding: 4px 0;
+      }
+
+      .compact-events-slots {
+        flex: 1 1 auto;
+        min-width: 0;
+        display: grid;
+        gap: 10px;
+        align-items: stretch;
+      }
+
+      .compact-events-slots.cols-1 {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .compact-events-slots.cols-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .compact-event-slot {
+        appearance: none;
+        border: none;
+        background: transparent;
+        color: var(--cal-text-primary);
+        font-family: inherit;
+        text-align: left;
+        padding: 2px 4px;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 2px;
+        min-width: 0;
+        border-radius: 6px;
+        transition: background-color 0.15s ease, opacity 0.15s ease;
+      }
+
+      .compact-event-slot:hover {
+        background: var(--cal-surface-alt);
+      }
+
+      .compact-events-slots.cols-2 .compact-event-slot + .compact-event-slot {
+        border-left: 1.5px solid color-mix(in srgb, var(--cal-text-primary) 24%, transparent);
+        padding-left: 12px;
+        border-radius: 0 6px 6px 0;
+      }
+
+      .compact-event-slot.is-past {
+        opacity: 0.48;
+        filter: grayscale(1);
+      }
+
+      .compact-event-slot.is-past .compact-slot-time,
+      .compact-event-slot.is-past .compact-slot-title {
+        text-decoration: line-through;
+      }
+
+      .compact-slot-time-row {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        min-width: 0;
+      }
+
+      .compact-slot-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--slot-accent, var(--cal-accent));
+        flex-shrink: 0;
+      }
+
+      .compact-slot-time {
+        font-size: 0.78rem;
+        font-weight: 800;
+        color: var(--cal-text-primary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .compact-slot-title {
+        font-size: 0.86rem;
+        font-weight: 500;
+        line-height: 1.25;
+        color: var(--cal-text-primary);
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        word-break: break-word;
+      }
+
+      .compact-progress-track {
+        width: 100%;
+        height: 3px;
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--cal-text-primary) 16%, transparent);
+        overflow: hidden;
+        margin-top: 3px;
+      }
+
+      .compact-progress-fill {
+        height: 100%;
+        border-radius: 999px;
+        background: var(--slot-accent, var(--cal-accent));
+      }
+
+      .carousel-controls {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        flex-shrink: 0;
+      }
+
+      .carousel-nav-btn {
+        appearance: none;
+        border: 1px solid color-mix(in srgb, var(--cal-text-primary) 18%, transparent);
+        background: transparent;
+        color: var(--cal-text-primary);
+        width: 22px;
+        height: 22px;
+        border-radius: 6px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        --mdc-icon-size: 15px;
+        transition: background-color 0.15s ease, opacity 0.15s ease;
+      }
+
+      .carousel-nav-btn:hover:not(:disabled) {
+        background: var(--cal-surface-alt);
+      }
+
+      .carousel-nav-btn:disabled {
+        opacity: 0.3;
+        cursor: default;
+      }
+
+      .compact-grid-wrap {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 auto;
+        min-height: 0;
+        gap: 2px;
+        padding-top: 4px;
+      }
+
+      .compact-weekday-row,
+      .compact-week-row {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        align-items: center;
+      }
+
+      .compact-weekday-row.with-weeks,
+      .compact-week-row.with-weeks {
+        grid-template-columns: 32px repeat(7, minmax(0, 1fr));
+      }
+
+      .compact-week-col-header,
+      .compact-weekday-cell {
+        text-align: center;
+        font-size: var(--mc-weekday-font);
+        padding: 4px 2px 6px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .compact-week-col-header {
+        font-weight: 600;
+        color: var(--cal-text-secondary);
+      }
+
+      .compact-weekday-cell {
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--cal-text-primary);
+      }
+
+      .compact-weeks-container {
+        display: grid;
+        grid-template-rows: repeat(auto-fit, minmax(0, 1fr));
+        gap: 2px;
+        flex: 1 1 auto;
+        min-height: 0;
+      }
+
+      .compact-week-row {
+        padding: 2px 4px;
+        border-radius: 10px;
+        min-height: var(--mc-compact-row-min-h, 34px);
+        transition: background-color 0.15s ease;
+      }
+
+      .compact-week-row.is-active-week {
+        background: color-mix(in srgb, var(--cal-accent) 18%, var(--cal-surface-alt));
+      }
+
+      .compact-week-number-cell {
+        text-align: center;
+        font-size: 0.76rem;
+        font-weight: 500;
+        color: var(--cal-text-secondary);
+      }
+
+      .compact-week-row.is-active-week .compact-week-number-cell {
+        color: var(--cal-text-primary);
+        font-weight: 800;
+      }
+
+      .compact-day-cell {
+        appearance: none;
+        border: none;
+        background: transparent;
+        color: var(--cal-text-primary);
+        font-family: inherit;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        padding: 2px 1px;
+        cursor: pointer;
+        min-width: 0;
+        border-radius: 8px;
+        transition: background-color 0.12s ease;
+      }
+
+      .compact-day-cell:hover {
+        background: color-mix(in srgb, var(--cal-text-primary) 8%, transparent);
+      }
+
+      .compact-day-cell.outside-month {
+        cursor: default;
+        pointer-events: none;
+      }
+
+      .compact-day-num {
+        min-width: 26px;
+        height: 24px;
+        padding: 0 4px;
+        border-radius: 7px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: var(--mc-compact-day-font, 0.9rem);
+        font-weight: 600;
+        line-height: 1;
+        color: var(--cal-text-primary);
+      }
+
+      .compact-day-num.is-focused-badge {
+        background: var(--cal-today-ring);
+        color: var(--text-primary-color, #ffffff);
+        font-weight: 800;
+      }
+
+      .compact-day-num.is-today-badge:not(.is-focused-badge) {
+        box-shadow: inset 0 0 0 1.5px var(--cal-today-ring);
+        color: var(--cal-accent);
+        font-weight: 800;
+      }
+
+      .compact-day-dots {
+        min-height: 6px;
+        padding: 0;
+        gap: 2px;
+      }
+
+      @container (max-width: 340px) {
+        .compact-events-slots.cols-2 {
+          grid-template-columns: minmax(0, 1fr);
+          gap: 6px;
+        }
+
+        .compact-events-slots.cols-2 .compact-event-slot + .compact-event-slot {
+          border-left: none;
+          border-top: 1px solid color-mix(in srgb, var(--cal-text-primary) 18%, transparent);
+          padding-left: 4px;
+          padding-top: 6px;
+          border-radius: 6px;
+        }
+
+        .compact-day-hero {
+          font-size: 1.9rem;
         }
       }
     `,

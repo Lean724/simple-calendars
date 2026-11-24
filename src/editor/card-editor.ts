@@ -21,6 +21,7 @@ import type {
   MonthCalendarSize,
   MonthCardConfig,
   MonthEventDisplay,
+  MonthLayout,
   SupportedLanguage,
 } from '../types';
 
@@ -349,6 +350,23 @@ export class HaCalendarCardEditor extends LitElement {
                       />
                       <span>${strings.editorShowHeader}</span>
                     </label>
+
+                    ${this._config.show_header !== false
+                      ? html`
+                          <label class="checkbox-row sub-option">
+                            <input
+                              type="checkbox"
+                              .checked=${this._config.show_navigation !== false}
+                              @change=${(e: Event) =>
+                                this._updateField(
+                                  'show_navigation',
+                                  (e.target as HTMLInputElement).checked,
+                                )}
+                            />
+                            <span>${strings.editorShowNavigation}</span>
+                          </label>
+                        `
+                      : nothing}
 
                     <label class="checkbox-row">
                       <input
@@ -712,15 +730,40 @@ export class HaCalendarCardEditor extends LitElement {
     cfg: MonthCardConfig,
     strings: TranslationStrings,
   ) {
+    const currentLayout: MonthLayout =
+      cfg.layout === 'compact' ? 'compact' : 'classic';
     const currentSize: MonthCalendarSize =
       cfg.calendar_size || (cfg.compact === true ? 'compact' : 'normal');
     const currentDisplay: MonthEventDisplay =
       cfg.event_display === 'dots' ? 'dots' : 'pills';
     const defaultMax =
-      currentDisplay === 'dots' ? 4 : currentSize === 'compact' ? 2 : 3;
+      currentLayout === 'compact' || currentDisplay === 'dots'
+        ? 4
+        : currentSize === 'compact'
+          ? 2
+          : 3;
 
     return html`
       <div class="two-col">
+        <div class="field">
+          <label>${strings.editorLayout}</label>
+          <select
+            .value=${currentLayout}
+            @change=${(e: Event) =>
+              this._updateField(
+                'layout',
+                (e.target as HTMLSelectElement).value as MonthLayout,
+              )}
+          >
+            <option value="classic" ?selected=${currentLayout === 'classic'}>
+              ${strings.editorLayoutClassic}
+            </option>
+            <option value="compact" ?selected=${currentLayout === 'compact'}>
+              ${strings.editorLayoutCompact}
+            </option>
+          </select>
+        </div>
+
         <div class="field">
           <label>${strings.editorCalendarSize}</label>
           <select
@@ -747,40 +790,46 @@ export class HaCalendarCardEditor extends LitElement {
             </option>
           </select>
         </div>
-
-        <div class="field">
-          <label>${strings.editorEventDisplay}</label>
-          <select
-            .value=${currentDisplay}
-            @change=${(e: Event) =>
-              this._updateField(
-                'event_display',
-                (e.target as HTMLSelectElement).value as MonthEventDisplay,
-              )}
-          >
-            <option value="pills" ?selected=${currentDisplay === 'pills'}>
-              ${strings.editorDisplayPills}
-            </option>
-            <option value="dots" ?selected=${currentDisplay === 'dots'}>
-              ${strings.editorDisplayDots}
-            </option>
-          </select>
-        </div>
       </div>
 
-      <div class="field">
-        <label>${strings.editorMaxEvents}</label>
-        <input
-          type="number"
-          min="1"
-          max="12"
-          .value=${String(cfg.max_events_per_day ?? defaultMax)}
-          @change=${(e: Event) =>
-            this._updateField(
-              'max_events_per_day',
-              Math.max(1, Number((e.target as HTMLInputElement).value) || defaultMax),
-            )}
-        />
+      <div class="two-col">
+        ${currentLayout === 'classic'
+          ? html`
+              <div class="field">
+                <label>${strings.editorEventDisplay}</label>
+                <select
+                  .value=${currentDisplay}
+                  @change=${(e: Event) =>
+                    this._updateField(
+                      'event_display',
+                      (e.target as HTMLSelectElement).value as MonthEventDisplay,
+                    )}
+                >
+                  <option value="pills" ?selected=${currentDisplay === 'pills'}>
+                    ${strings.editorDisplayPills}
+                  </option>
+                  <option value="dots" ?selected=${currentDisplay === 'dots'}>
+                    ${strings.editorDisplayDots}
+                  </option>
+                </select>
+              </div>
+            `
+          : nothing}
+
+        <div class="field">
+          <label>${strings.editorMaxEvents}</label>
+          <input
+            type="number"
+            min="1"
+            max="12"
+            .value=${String(cfg.max_events_per_day ?? defaultMax)}
+            @change=${(e: Event) =>
+              this._updateField(
+                'max_events_per_day',
+                Math.max(1, Number((e.target as HTMLInputElement).value) || defaultMax),
+              )}
+          />
+        </div>
       </div>
 
       <div class="toggles-list">
@@ -795,6 +844,19 @@ export class HaCalendarCardEditor extends LitElement {
               )}
           />
           <span>${strings.editorShowWeekNumbers}</span>
+        </label>
+
+        <label class="checkbox-row">
+          <input
+            type="checkbox"
+            .checked=${cfg.show_month_grid !== false}
+            @change=${(e: Event) =>
+              this._updateField(
+                'show_month_grid',
+                (e.target as HTMLInputElement).checked,
+              )}
+          />
+          <span>${strings.editorShowMonthGrid}</span>
         </label>
 
         <label class="checkbox-row">

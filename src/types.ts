@@ -113,12 +113,15 @@ export interface BaseCalendarCardConfig {
 
 export type MonthCalendarSize = 'compact' | 'normal' | 'large';
 export type MonthEventDisplay = 'pills' | 'dots';
+export type MonthLayout = 'classic' | 'compact';
 
 export interface MonthCardConfig extends BaseCalendarCardConfig {
+  layout?: MonthLayout;
   calendar_size?: MonthCalendarSize;
   event_display?: MonthEventDisplay;
   max_events_per_day?: number;
   show_week_numbers?: boolean;
+  show_month_grid?: boolean;
   show_day_summary?: boolean;
   show_progress_bar?: boolean;
   compact?: boolean;

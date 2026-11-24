@@ -23,10 +23,10 @@ assert(
   'dist/simple-calendars.js and root simple-calendars.js must be identical',
 );
 assert(
-  distBytes.toString('utf8').includes('2.0.1'),
-  'Compiled bundle must contain v2.0.1 version marker',
+  distBytes.toString('utf8').includes('2.1.0'),
+  'Compiled bundle must contain v2.1.0 version marker',
 );
-console.log('✓ Compiled bundle exists in dist/ and root, matches byte-for-byte, and reports v2.0.1.');
+console.log('✓ Compiled bundle exists in dist/ and root, matches byte-for-byte, and reports v2.1.0.');
 
 // 2. Verify 10-language i18n parity in src/constants.ts and src/utils/date-utils.ts
 const expectedLangs = ['en', 'es', 'zh-Hans', 'de', 'it', 'fr', 'pt', 'ru', 'pl', 'nl'];
@@ -46,6 +46,10 @@ for (const requiredKey of [
   'editorCalendarSize',
   'editorEventDisplay',
   'editorShowDaySummary',
+  'editorLayout',
+  'editorLayoutClassic',
+  'editorLayoutCompact',
+  'editorShowMonthGrid',
 ]) {
   assert(
     interfaceKeys.includes(requiredKey),
@@ -679,8 +683,116 @@ function createMockHass(eventsByEntity, lang = 'en') {
   el.handleDayRollover(nov30, dec01);
   assert.equal(el._focusedDay.getDate(), 15, 'Month card preserves manually focused day');
 
+  // Compact layout tests (top focus bar, 2-slot event carousel, swipe, active week band, hideable grid)
+  el.setConfig({
+    type: 'custom:simple-calendar-month-card',
+    entities: [{ entity: 'calendar.month_test', color: '#1a73e8' }],
+    layout: 'compact',
+    show_week_numbers: true,
+    max_events_per_day: 4,
+  });
+  el._anchorDate = new Date(2026, 10, 1, 0, 0, 0, 0);
+  el._focusDay(day20Start);
+  el._currentNow = new Date(fixedNow);
+  await settleCard(el);
+
+  assert(
+    el._rendered.includes('layout-compact') &&
+      el._rendered.includes('compact-focus-bar') &&
+      el._rendered.includes('compact-grid-wrap'),
+    'Month card with layout: compact must render compact-focus-bar and compact-grid-wrap',
+  );
+  assert.equal(el.isUppercaseHeader(), true, 'Compact Month layout must enable uppercasePeriod header');
+  assert.equal(el.showHeaderNavigation(), true, 'Month card must enable header navigation by default');
+  assert(
+    el._rendered.includes('compact-week-row with-weeks is-active-week'),
+    'Compact Month grid must highlight the active week row containing the focused day',
+  );
+  assert(
+    el._rendered.includes('<div class="compact-day-cell outside-month" aria-hidden="true"></div>'),
+    'Compact Month grid must render empty cells for outside-month dates',
+  );
+  assert(
+    el._rendered.includes('Today Month AllDay') &&
+      el._rendered.includes('Morning Month Timed') &&
+      el._rendered.includes('carousel-controls'),
+    'Compact top bar must render first 2 events and carousel controls when >2 events exist',
+  );
+  assert(
+    getClassAttr(extractButtonBlock(el._rendered.split('compact-grid-wrap')[0], 'Morning Month Timed')).includes('is-past'),
+    'Compact event carousel slot must dim past events by default',
+  );
+  assert(
+    getClassAttr(extractTagBlock(el._rendered, 'span', 'Morning Month Timed')).includes('is-past'),
+    'Compact grid dots must dim past events by default',
+  );
+
+  // Carousel stepping via button helper & swipe
+  el._stepCarousel(1, 3);
+  await settleCard(el);
+  assert(
+    el._rendered.split('compact-grid-wrap')[0].includes('Future Month Timed') &&
+      !el._rendered.split('compact-grid-wrap')[0].includes('Today Month AllDay'),
+    'Stepping compact carousel forward must shift visible 2-event window',
+  );
+  el._onCarouselTouchStart({ touches: [{ clientX: 100, clientY: 40 }] });
+  el._onCarouselTouchEnd({ changedTouches: [{ clientX: 190, clientY: 44 }] }, 3);
+  await settleCard(el);
+  assert(
+    el._rendered.split('compact-grid-wrap')[0].includes('Today Month AllDay'),
+    'Swiping right on compact event carousel must step backward',
+  );
+
+  // Hide navigation & hide month grid options
+  el.setConfig({
+    type: 'custom:simple-calendar-month-card',
+    entities: [{ entity: 'calendar.month_test', color: '#1a73e8' }],
+    layout: 'compact',
+    show_navigation: false,
+    show_month_grid: false,
+    dim_completed_events: false,
+  });
+  el._focusDay(day20Start);
+  await settleCard(el);
+  assert.equal(el.showHeaderNavigation(), false, 'show_navigation: false must disable header navigation');
+  assert(!el._rendered.includes('compact-grid-wrap'), 'show_month_grid: false must hide compact grid');
+  assert.equal(el.getCardSize(), 2, 'show_month_grid: false must return card size 2');
+  assert.deepEqual(el.getGridOptions(), {
+    columns: 12,
+    min_columns: 6,
+    rows: 2,
+    min_rows: 2,
+  });
+  assert(
+    !getClassAttr(extractButtonBlock(el._rendered, 'Morning Month Timed')).includes('is-past'),
+    'Compact event slot with dim_completed_events: false must not apply is-past',
+  );
+
   el.isConnected = false;
   el.disconnectedCallback();
+
+  // Shared header navigation & uppercase checks
+  const sharedHeader = mountElement(registry, 'ha-calendar-shared-header');
+  sharedHeader.periodLabel = 'November 2026';
+  sharedHeader.strings = translationsObj.en;
+  sharedHeader.showNavigation = true;
+  sharedHeader.uppercasePeriod = true;
+  sharedHeader.isConnected = true;
+  sharedHeader.connectedCallback();
+  await settleCard(sharedHeader);
+  assert(
+    sharedHeader._rendered.includes('is-uppercase') &&
+      sharedHeader._rendered.includes('nav-controls'),
+    'Shared header must render uppercase class and nav-controls when enabled',
+  );
+  sharedHeader.showNavigation = false;
+  await settleCard(sharedHeader);
+  assert(
+    !sharedHeader._rendered.includes('nav-controls'),
+    'Shared header must omit nav-controls when showNavigation is false',
+  );
+  sharedHeader.isConnected = false;
+  sharedHeader.disconnectedCallback();
 
   // Event dialog day list dimming
   const dialog = mountElement(registry, 'ha-calendar-event-dialog');
@@ -850,11 +962,25 @@ function createMockHass(eventsByEntity, lang = 'en') {
   editor.setConfig({ type: 'custom:simple-calendar-month-card', entities: [] });
   await settleCard(editor);
   assert(
-    editor._rendered.includes(translationsObj.en.editorCalendarSize) &&
+    editor._rendered.includes(translationsObj.en.editorLayout) &&
+      editor._rendered.includes(translationsObj.en.editorShowNavigation) &&
+      editor._rendered.includes(translationsObj.en.editorShowMonthGrid) &&
+      editor._rendered.includes(translationsObj.en.editorCalendarSize) &&
       editor._rendered.includes(translationsObj.en.editorEventDisplay) &&
       editor._rendered.includes(translationsObj.en.editorShowDaySummary) &&
       editor._rendered.includes(translationsObj.en.editorShowProgressBar),
-    'Month editor must expose calendar_size, event_display, show_day_summary, and show_progress_bar',
+    'Month editor must expose layout, show_navigation, show_month_grid, calendar_size, event_display, show_day_summary, and show_progress_bar',
+  );
+  editor.setConfig({
+    type: 'custom:simple-calendar-month-card',
+    entities: [],
+    layout: 'compact',
+  });
+  await settleCard(editor);
+  assert(
+    !editor._rendered.includes(translationsObj.en.editorEventDisplay) &&
+      editor._rendered.includes(translationsObj.en.editorShowMonthGrid),
+    'Month editor must hide event_display when layout is compact',
   );
   editor.setConfig({
     type: 'custom:simple-calendar-month-card',

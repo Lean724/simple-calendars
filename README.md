@@ -15,14 +15,15 @@ Compatible with **Home Assistant Marketplace** (**HACS**) and both **Sections** 
 | :--- | :--- | :--- |
 | **Focus Event Card** | `custom:simple-calendar-focus-event-card` | Compact now/next tracker displaying **Previous events**, **Current events** (with live progress bar), and **Upcoming events**, plus optional title bar and calendar filters. |
 | **Daily Calendar** | `custom:simple-calendar-day-card` | Minimalist daily agenda widget with week pill (`Week 47`), day summary, remaining time, and real-time progress bar. |
-| **Monthly Calendar** | `custom:simple-calendar-month-card` | Scalable monthly grid (`compact`, `normal`, `large`) with **pills** or **dots**, plus a minimalist focused-day summary matching the Daily Card. |
+| **Monthly Calendar** | `custom:simple-calendar-month-card` | Monthly card with two structural layouts (`classic` grid + bottom summary, or `compact` editorial top focus bar with swipeable 2-event carousel + highlighted active week), scalable (`compact`, `normal`, `large`), with optional hideable month grid (`show_month_grid`). |
 
 > *(Note: Legacy aliases `custom:simple-calendar-event-card`, `custom:ha-calendar-event-card`, `custom:ha-calendar-month-card`, and `custom:ha-calendar-day-card` remain supported for backward compatibility. In v2.0.0, Weekly Card was removed for future refinement and Event Card was renamed to Focus Event Card.)*
 
 ## Key Features
 
-- **Real-time event tracking & past-event dimming**: Finished timed events and past all-day events are automatically dimmed, grayed out, and struck through across **Daily**, **Monthly** (grid pills/dots, focused summary, and day dialog), and **Focus Event** (`dim_completed_events: true` by default), or hidden completely with `show_completed_events: false`.
-- **Scalable Monthly Card (`4x12` ready)**: Choose between `compact`, `normal`, and `large` grid scales, switch cell events between `pills` (default) and `dots`, and toggle the Daily-style bottom summary (`show_day_summary`).
+- **Real-time event tracking & past-event dimming**: Finished timed events and past all-day events are automatically dimmed, grayed out, and struck through across **Daily**, **Monthly** (grid pills/dots, focused summary/carousel, and day dialog), and **Focus Event** (`dim_completed_events: true` by default), or hidden completely with `show_completed_events: false`.
+- **Dual Monthly layouts (`classic` & `compact`)**: Keep the `classic` bordered grid (`pills` or `dots`) with bottom Daily-style summary, or switch to `layout: compact` for an editorial layout featuring an uppercase month title, a top focused-day bar with a horizontal **swipe/arrow 2-event carousel**, active week highlight, clean borderless grid with dots, and optional `show_month_grid: false` compact agenda mode.
+- **Scalable Monthly Card (`4x12` ready)**: Choose between `compact`, `normal`, and `large` grid scales, toggle `show_navigation`, toggle week numbers (`show_week_numbers`), and toggle the day summary/focus block (`show_day_summary`).
 - **Automatic midnight rollover**: Cards anchored to today automatically advance at midnight while respecting manual navigation when `show_navigation: true`.
 - **Advanced display options**: Toggle the current day highlight/column (`show_current_day`), toggle all-day events (`show_all_day_events`), place all-day events at the top or bottom (`all_day_position`), and show a clean empty-day message when no events are scheduled.
 - **Unlimited multi-entity calendars**: Combine any number of `calendar.*` entities into a single card with custom names, MDI icons, and colors.
@@ -154,20 +155,27 @@ entities:
 
 | Option | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
+| `layout` | `'classic' \| 'compact'` | `'classic'` | `'classic'` renders the bordered grid + bottom summary; `'compact'` renders the top focused-day bar with swipe/arrow event carousel + clean dot grid with active week highlight. |
 | `calendar_size` | `'compact' \| 'normal' \| 'large'` | `'normal'` | Grid row scale (`compact` fits `4x12` Sections slots cleanly). |
-| `event_display` | `'pills' \| 'dots'` | `'pills'` | Renders text pills or minimal color dots inside each day cell. |
-| `max_events_per_day` | `number` | `3` (`2` compact, `4` dots) | Maximum visible events per cell before showing `+N more`. |
+| `event_display` | `'pills' \| 'dots'` | `'pills'` | Renders text pills or minimal color dots inside each day cell (`classic` layout). |
+| `max_events_per_day` | `number` | `3` (`2` compact size, `4` dots/compact layout) | Maximum visible events per cell before showing `+N more` / `+N`. |
 | `show_week_numbers` | `boolean` | `false` | Shows the left ISO week number column. |
-| `show_day_summary` | `boolean` | `true` | Shows the Daily-style selected day summary below the monthly grid. |
-| `show_progress_bar` | `boolean` | `true` | Shows the live progress bar inside the selected day summary. |
-| `show_header` | `boolean` | `true` | Shows the month navigation header. |
+| `show_month_grid` | `boolean` | `true` | Shows or hides the entire monthly calendar grid (leaving header and/or focused day bar). |
+| `show_day_summary` | `boolean` | `true` | Shows the Daily-style bottom summary (`classic`) or the top focused-day + event carousel bar (`compact`). |
+| `show_progress_bar` | `boolean` | `true` | Shows the live progress bar inside the selected day summary / ongoing carousel events. |
+| `show_header` | `boolean` | `true` | Shows the month header. |
+| `show_navigation` | `boolean` | `true` | Shows `< Today >` and refresh navigation buttons in the month header. |
 | `show_entity_toggles` | `boolean` | `false` | Shows interactive chips to filter calendars. |
 
 ```yaml
+# Example: Compact editorial layout with swipe/arrow carousel and dot grid
 type: custom:simple-calendar-month-card
+layout: compact
 calendar_size: compact
-event_display: pills
+show_week_numbers: true
+show_month_grid: true
 show_day_summary: true
+show_navigation: true
 show_progress_bar: true
 show_completed_events: true
 dim_completed_events: true

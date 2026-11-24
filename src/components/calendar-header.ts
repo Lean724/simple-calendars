@@ -11,6 +11,8 @@ export class HaCalendarSharedHeader extends LitElement {
   @property({ type: Array }) public entities: NormalizedCalendarEntity[] = [];
   @property({ attribute: false }) public hiddenEntities: Set<string> = new Set();
   @property({ type: Boolean }) public showEntityToggles = true;
+  @property({ type: Boolean }) public showNavigation = true;
+  @property({ type: Boolean }) public uppercasePeriod = false;
   @property({ type: Boolean }) public loading = false;
   @property({ type: Boolean }) public compact = false;
   @property({ attribute: false }) public strings!: TranslationStrings;
@@ -33,48 +35,54 @@ export class HaCalendarSharedHeader extends LitElement {
             ${this.cardTitle
               ? html`<div class="card-subtitle">${this.cardTitle}</div>`
               : nothing}
-            <div class="period-title">${this.periodLabel}</div>
+            <div class="period-title ${this.uppercasePeriod ? 'is-uppercase' : ''}">
+              ${this.periodLabel}
+            </div>
           </div>
 
-          <div class="nav-controls">
-            <button
-              class="icon-btn"
-              type="button"
-              title=${this.strings?.prev || 'Previous'}
-              aria-label=${this.strings?.prev || 'Previous'}
-              @click=${() => this._emit('cal-prev')}
-            >
-              <ha-icon icon="mdi:chevron-left"></ha-icon>
-            </button>
+          ${this.showNavigation
+            ? html`
+                <div class="nav-controls">
+                  <button
+                    class="icon-btn"
+                    type="button"
+                    title=${this.strings?.prev || 'Previous'}
+                    aria-label=${this.strings?.prev || 'Previous'}
+                    @click=${() => this._emit('cal-prev')}
+                  >
+                    <ha-icon icon="mdi:chevron-left"></ha-icon>
+                  </button>
 
-            <button
-              class="today-btn"
-              type="button"
-              @click=${() => this._emit('cal-today')}
-            >
-              ${this.strings?.today || 'Today'}
-            </button>
+                  <button
+                    class="today-btn"
+                    type="button"
+                    @click=${() => this._emit('cal-today')}
+                  >
+                    ${this.strings?.today || 'Today'}
+                  </button>
 
-            <button
-              class="icon-btn"
-              type="button"
-              title=${this.strings?.next || 'Next'}
-              aria-label=${this.strings?.next || 'Next'}
-              @click=${() => this._emit('cal-next')}
-            >
-              <ha-icon icon="mdi:chevron-right"></ha-icon>
-            </button>
+                  <button
+                    class="icon-btn"
+                    type="button"
+                    title=${this.strings?.next || 'Next'}
+                    aria-label=${this.strings?.next || 'Next'}
+                    @click=${() => this._emit('cal-next')}
+                  >
+                    <ha-icon icon="mdi:chevron-right"></ha-icon>
+                  </button>
 
-            <button
-              class="icon-btn ${this.loading ? 'spinning' : ''}"
-              type="button"
-              title=${this.strings?.refresh || 'Refresh'}
-              aria-label=${this.strings?.refresh || 'Refresh'}
-              @click=${() => this._emit('cal-refresh')}
-            >
-              <ha-icon icon="mdi:refresh"></ha-icon>
-            </button>
-          </div>
+                  <button
+                    class="icon-btn ${this.loading ? 'spinning' : ''}"
+                    type="button"
+                    title=${this.strings?.refresh || 'Refresh'}
+                    aria-label=${this.strings?.refresh || 'Refresh'}
+                    @click=${() => this._emit('cal-refresh')}
+                  >
+                    <ha-icon icon="mdi:refresh"></ha-icon>
+                  </button>
+                </div>
+              `
+            : nothing}
         </div>
 
         ${this.showEntityToggles && this.entities.length > 0
@@ -174,6 +182,13 @@ export class HaCalendarSharedHeader extends LitElement {
       font-weight: 600;
       color: var(--primary-text-color, #212121);
       line-height: 1.25;
+    }
+
+    .period-title.is-uppercase {
+      text-transform: uppercase;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      font-size: 1.25rem;
     }
 
     .nav-controls {
